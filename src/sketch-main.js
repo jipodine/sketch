@@ -63,7 +63,7 @@ app.init = function() {
   var $sketch = d3.select('#sketch');
 
   app.sketch = {};
-  app.sketch.margin = { top: 20, bottom: 20, left: 10, right: 10} ;
+  app.sketch.margin = { top: 0, bottom: 0, left: 0, right: 0} ;
 
   const width = $sketch[0][0].clientWidth;
   const height = Math.floor(width * (data.domain.y[1] - data.domain.y[0])

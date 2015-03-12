@@ -10012,37 +10012,6 @@ var d3 = require("d3");
 
 var app = window.app || {};
 
-// var wavesUI = require('waves-ui');
-// var timeline = wavesUI.timeline;
-// var breakpoint = wavesUI.breakpoint;
-
-// var d3 = wavesUI.d3;
-
-// var xDomain = [-10, 10];
-// var yDomain = [-5, 5];
-
-// var data = [
-//   {
-//     cx: 0,
-//     cy: 0,
-//     r: 3
-//   }, {
-//     cx: -2,
-//     cy: -1,
-//     r: 3
-//   }, {
-//     cx: 2,
-//     cy: 1,
-//     r: 3
-//   }
-// ];
-
-// var datumToAdd = {
-//   cx: -8,
-//   cy: -3,
-//   r: 6
-// };
-
 function exclusiveChildSelection(element) {
   d3.selectAll(element.parentNode.childNodes).classed("selected", false);
   d3.select(element).classed("selected", true);
@@ -10086,7 +10055,7 @@ app.init = function () {
   var $sketch = d3.select("#sketch");
 
   app.sketch = {};
-  app.sketch.margin = { top: 20, bottom: 20, left: 10, right: 10 };
+  app.sketch.margin = { top: 0, bottom: 0, left: 0, right: 0 };
 
   var width = $sketch[0][0].clientWidth;
   var height = Math.floor(width * (data.domain.y[1] - data.domain.y[0]) / (data.domain.x[1] - data.domain.x[0]));
@@ -10144,46 +10113,6 @@ app.init = function () {
     //   .call(brush.extent(defaultExtent))
     //   .call(brush.event);
   }
-
-  // var graph = timeline()
-  //       .width($sketch.clientWidth)
-  //       .height($sketch.clientWidth / 2)
-  //       .xDomain(xDomain)
-  //       .yDomain(yDomain);
-
-  // var breakpointLayer = breakpoint()
-  //       .params({
-  //         interactions: { editable: true },
-  //         displayLine: false
-  //       })
-  //       .data(data);
-
-  // // breakpoint.handleSelection = function(item, e) {
-
-  // // }
-
-  // graph.add(breakpointLayer);
-
-  // // call once
-  // d3.select('#sketch').call(graph.draw);
-
-  // graph.on('mousedown', function(e) {
-  //   if (!addCtrl) { return; }
-  //   var cx = graph.xScale.invert(e.layerX);
-  //   var cy = graph.yScale.invert(e.layerY);
-
-  //   // debug('item = %s', d3.select(e).classed('item') );
-  //   debug("e.layerX,Y = %s,%s", e.layerY, e.layerX);
-
-  //   data.push({
-  //     cx: cx,
-  //     cy: cy,
-  //     r: 3
-  //   });
-
-  //   // update after data change
-  //   graph.update();
-  // });
 }; // init
 
 window.app = app;
