@@ -22,8 +22,9 @@ data.values = d3.range(10).map(function () {
 app.init = function() {
   var addCtrl = false;
 
-  var $sketchControl = d3.select('#sketch-control')
-        .append('p')
+  var $sketch = d3.select('#sketch');
+
+  var $sketchControl = $sketch.append('div')
         .attr('class', 'sketch-control');
 
   $sketchControl.append('button').attr('id', 'clickAdd')
@@ -60,8 +61,6 @@ app.init = function() {
       exclusiveChildSelection(this);
     });
 
-  var $sketch = d3.select('#sketch');
-
   app.sketch = {};
   app.sketch.margin = { top: 0, bottom: 0, left: 0, right: 0} ;
 
@@ -71,7 +70,9 @@ app.init = function() {
   app.sketch.width = width - app.sketch.margin.left - app.sketch.margin.right;
   app.sketch.height = height - app.sketch.margin.top - app.sketch.margin.bottom;
 
-  $sketch = $sketch.append('svg');
+  var $sketchSVG = $sketch.append('div')
+        .attr('class', 'sketch-svg')
+        .append('svg');
 
   let x = d3.scale.linear()
     .domain(data.domain.x)
@@ -81,13 +82,15 @@ app.init = function() {
         .domain(data.domain.y)
         .range([0, app.sketch.height]);
 
-  $sketch.attr("width", app.sketch.width
+  $sketchSVG.attr("width", app.sketch.width
               + app.sketch.margin.left + app.sketch.margin.right)
         .attr("height", app.sketch.height
               + app.sketch.margin.top + app.sketch.margin.bottom)
       .append("g")
         .attr("transform", "translate(" + app.sketch.margin.left
               + "," + app.sketch.margin.top + ")");
+
+
 
   var brush = d3.svg.brush()
         .x(x)
@@ -96,18 +99,18 @@ app.init = function() {
         .on("brush", brushed)
         .on("brushend", brushended);
 
-  $sketch.append("g")
+  $sketchSVG.append("g")
     .attr("class", "brush")
     .call(brush)
     .call(brush.event);
 
-  var point = $sketch.selectAll(".point")
+  var point = $sketchSVG.selectAll(".point")
         .data(data.values)
         .enter().append("circle")
         .attr("class", "point")
         .attr("cx", function(d) { return x(d[0]); })
         .attr("cy", function(d) { return y(d[1]); })
-        .attr("r", 4)
+        .attr("r", 7)
         .on('click', function (d,i) {
           debug('circle clicked: %s; %s', d, i);
             // invert selection
@@ -116,8 +119,10 @@ app.init = function() {
           d3.event.stopPropagation();
         });
 
+  // exit remove
+
   function brushed() {
-    var point = $sketch.selectAll(".point");
+    var point = $sketchSVG.selectAll(".point");
     const extent = brush.extent();
     point.each(function(d) { d.selected = false; });
     if(brush.empty() ) {

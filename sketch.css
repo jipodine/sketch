@@ -5,11 +5,16 @@ body {
 }
 
 #sketch {
-    margin: 0 auto;
+    margin: 0;
+}
+
+.sketch-svg {
+    margin: 0;
     border: 1px solid grey;
 }
 
 .sketch-control {
+    margin: 0;
 }
 
 .sketch-control-element {
