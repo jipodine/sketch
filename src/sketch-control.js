@@ -27,7 +27,6 @@ e.SketchControl = class {
       .classed('add', true)
       .text('Add')
       .on('click', (d, i) => {
-        debug('Add');
         this.setMode('add');
       });
 
@@ -36,7 +35,6 @@ e.SketchControl = class {
       .classed('select', true)
       .text('Select')
       .on('click', (d, i) => {
-        debug('Select: %s, %s', d , i);
         this.setMode('select');
       });
 
@@ -45,7 +43,6 @@ e.SketchControl = class {
       .classed('delete', true)
       .text('Delete')
       .on('click', (d, i) => {
-        debug('Delete');
         this.setMode('delete');
       });
 
@@ -54,9 +51,10 @@ e.SketchControl = class {
       .classed('move', true)
       .text('Move')
       .on('click', (d, i) => {
-        debug('Move');
         this.setMode('move');
       });
+
+    this.setMode('add');
   }
 
   setMode(mode) {
@@ -65,14 +63,14 @@ e.SketchControl = class {
 
     switch(mode) {
     case 'add':
-      debug('mode add');
       sisters.filter('.add').classed('selected', true);
-      this.parent.svg.brushRemove();
+      this.brushRemove();
       break;
     case 'select':
-      debug('mode select');
       sisters.filter('.select').classed('selected', true);
-      this.parent.svg.brushAdd();
+      if (typeof this.parent.svg !== 'undefined') {
+        this.parent.svg.brushAdd();
+      }
       break;
     case 'delete':
       sisters.filter('.delete').classed('selected', true);
@@ -80,8 +78,23 @@ e.SketchControl = class {
     case 'move':
       sisters.filter('.move').classed('selected', true);
       break;
-
     }
+    this.mode = mode;
+    return this;
+  }
+
+  brushAdd() {
+    if (typeof this.parent.svg !== 'undefined') {
+      this.parent.svg.brushAdd();
+    }
+    return this;
+  }
+
+  brushRemove() {
+    if (typeof this.parent.svg !== 'undefined') {
+      this.parent.svg.brushRemove();
+    }
+    return this;
   }
 
 }; // SketchControl class

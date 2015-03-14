@@ -7,6 +7,7 @@ let e = {};
 
 e.SketchSVG = class {
   constructor(parent, width, height) {
+    const that = this;
     this.parent = parent;
     this.data = this.parent.data;
     this.width = width;
@@ -25,14 +26,21 @@ e.SketchSVG = class {
       .append('svg')
       .attr('class', 'sketch-svg')
       .attr('id', this.parent.id.replace(/.*-/, 'sketch-svg-'))
-    // .attr("pointer-events", "all")
-      .on('click.svg', (d, i) => {
-        debug('svg clicked: %s; %s', d, i);
+      .attr('width', this.width)
+      .attr('height', this.height)    // .attr("pointer-events", "all")
+      .on('click.svg', function (d, i)  {
+        if(d3.event.defaultPrevented) {
+          debug('svg click prevented');
+          return;
+        }
+
+        if(that.parent.control.mode === 'add') {
+          const [x, y] = d3.mouse(this);
+          that.data.addPoint( {x: that.x.invert(x),
+                               y: that.y.invert(y) });
+          that.update();
+        }
       });
-
-    this.$selection.attr('width', this.width)
-      .attr('height', this.height);
-
 
     this.brush = d3.svg.brush()
       .x(this.x)
@@ -40,35 +48,58 @@ e.SketchSVG = class {
       .on("brush", () => { this.brushed(); } )
       .on("brushend", () => { this.brushended(); } );
 
-    this.point = this.$selection.selectAll(".point")
+    this.update();
+  }
+
+  update() {
+    const that = this;
+    const $point = this.$selection.selectAll(".point")
       .data(this.data.values)
       .enter().append("circle")
       .attr("class", "point")
-      .attr("cx", (d) => { return this.x(d[0]); })
-      .attr("cy", (d) => { return this.y(d[1]); })
+      .attr("cx", (d) => { return this.x(d.x); })
+      .attr("cy", (d) => { return this.y(d.y); })
       .attr("r", 7)
+      .attr("name", (d) => { return d.name; })
       .on('click', function (d, i) {
         debug('circle clicked: %s; %s', d, i);
-        // invert selection
-        var s = d3.select(this);
-        s.classed('selected', !s.classed('selected') );
-        d3.event.stopPropagation();
+        switch(that.parent.control.mode) {
+        case 'add':
+          e.pointInvertSelection(this);
+          d3.event.stopPropagation();
+          break;
+
+        case 'select':
+          e.pointInvertSelection(this);
+          d3.event.stopPropagation();
+          break;
+
+        case 'delete':
+          // exit remove
+          break;
+
+        case 'move':
+          // drag
+          break;
+        }
+
       });
-    // exit remove
+
   }
 
+
   brushed() {
-    let point = this.$selection.selectAll(".point");
+    const $point = this.$selection.selectAll(".point");
     const extent = this.brush.extent();
-    point.each(function(d) { d.selected = false; });
+    $point.each(function(d) { d.selected = false; });
     if(this.brush.empty() ) {
       debug('brush empty');
       // d3.event.target.extent(d3.select(this.parentNode));
       //  d3.select(this.parentNode).event(svgClick);
     } else {
-      point.classed("selected", function(d) {
-        return d[0] >= extent[0][0] && d[0] <= extent[1][0]
-          && d[1] >= extent[0][1] && d[1] <= extent[1][1];
+      $point.classed("selected", function(d) {
+        return d.x >= extent[0][0] && d.x <= extent[1][0]
+          && d.y >= extent[0][1] && d.y <= extent[1][1];
       });
     }
   }
@@ -94,7 +125,11 @@ e.SketchSVG = class {
       .call(this.brush.event);
   }
 
-
 };
+
+e.pointInvertSelection = function(that) {
+  const s = d3.select(that);
+  s.classed('selected', !s.classed('selected') );
+}
 
 module.exports = exports = e;

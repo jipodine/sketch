@@ -1,22 +1,18 @@
 const debug = require('debug')('sketch:app');
 const d3 = require('d3');
 
-const sketch = require('./sketch.js');
-
 let app = window.app || {};
 
+app.sketch = require('./sketch.js');
+app.data = require('./data.js');
 
-let data = {};
-data.domain = { x: [-10, 10], y: [-5, 5] };
-data.values = d3.range(10).map(function () {
-  const range = { x: data.domain.x[1] - data.domain.x[0],
-                  y: data.domain.y[1] - data.domain.y[0] };
-  return [ Math.random() * range.x +  data.domain.x[0],
-           Math.random() * range.y +  data.domain.y[0] ];
-});
+const domain = { x: [-10, 10], y: [-5, 5] };
+app.dataSet = new app.data.Set(domain);
+
+app.dataSet.addRandom(10);
 
 app.init = function() {
-  let sketch1 = new sketch.Sketch(d3.select('body'), data);
+  let sketch1 = new app.sketch.Sketch(d3.select('body'), app.dataSet);
 }; // init
 
 window.app = app;

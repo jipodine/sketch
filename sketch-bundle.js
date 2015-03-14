@@ -10010,20 +10010,18 @@ function plural(ms, n, name) {
 var debug = require("debug")("sketch:app");
 var d3 = require("d3");
 
-var sketch = require("./sketch.js");
-
 var app = window.app || {};
 
-var data = {};
-data.domain = { x: [-10, 10], y: [-5, 5] };
-data.values = d3.range(10).map(function () {
-  var range = { x: data.domain.x[1] - data.domain.x[0],
-    y: data.domain.y[1] - data.domain.y[0] };
-  return [Math.random() * range.x + data.domain.x[0], Math.random() * range.y + data.domain.y[0]];
-});
+app.sketch = require("./sketch.js");
+app.data = require("./data.js");
+
+var domain = { x: [-10, 10], y: [-5, 5] };
+app.dataSet = new app.data.Set(domain);
+
+app.dataSet.addRandom(10);
 
 app.init = function () {
-  var sketch1 = new sketch.Sketch(d3.select("body"), data);
+  var sketch1 = new app.sketch.Sketch(d3.select("body"), app.dataSet);
 }; // init
 
 window.app = app;
@@ -10032,7 +10030,90 @@ window.addEventListener("DOMContentLoaded", function () {
   app.init();
 });
 
-},{"./sketch.js":8,"d3":1,"debug":2}],6:[function(require,module,exports){
+},{"./data.js":6,"./sketch.js":9,"d3":1,"debug":2}],6:[function(require,module,exports){
+"use strict";
+
+var _createClass = (function () { function defineProperties(target, props) { for (var key in props) { var prop = props[key]; prop.configurable = true; if (prop.value) prop.writable = true; } Object.defineProperties(target, props); } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
+
+var _classCallCheck = function (instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } };
+
+var e = {};
+
+e.randomName = function () {
+  var size = arguments[0] === undefined ? 3 : arguments[0];
+
+  var v = "aeiouy";
+  var c = "zrtpsdfghjklmwxcvbn";
+
+  var flip = Math.random() > 0.5;
+  var name = "";
+  for (var i = 0; i < size; ++i, flip = !flip) {
+    var l = flip ? c : v;
+    name += l.charAt(Math.floor(Math.random() * l.length));
+  }
+  return name;
+};
+
+e.Point = (function () {
+  var _class = function () {
+    var point = arguments[0] === undefined ? {} : arguments[0];
+
+    _classCallCheck(this, _class);
+
+    this.x = point.x || 0;
+    this.y = point.y || 0;
+    this.name = typeof point.name != "undefined" ? point.name : e.randomName(3);
+  };
+
+  _createClass(_class, {
+    same: {
+      value: function same(point) {
+        return this.x === point.x && this.y === point.y && this.name === this.name;
+      }
+    }
+  });
+
+  return _class;
+})();
+
+e.Set = (function () {
+  var _class2 = function () {
+    var domain = arguments[0] === undefined ? { x: [-1, 1], y: [-1, 1] } : arguments[0];
+
+    _classCallCheck(this, _class2);
+
+    this.domain = domain;
+    this.values = [];
+  };
+
+  _createClass(_class2, {
+    addPoint: {
+      value: function addPoint() {
+        var point = arguments[0] === undefined ? {} : arguments[0];
+
+        this.values.push(new e.Point(point));
+        return this;
+      }
+    },
+    addRandom: {
+      value: function addRandom(number) {
+        var extend = { x: this.domain.x[1] - this.domain.x[0],
+          y: this.domain.y[1] - this.domain.y[0] };
+        for (var i = 0; i < number; ++i) {
+          this.addPoint({ x: Math.random() * extend.x + this.domain.x[0],
+            y: Math.random() * extend.y + this.domain.y[0] });
+        }
+        return this;
+      }
+    }
+  });
+
+  return _class2;
+})();
+
+module.exports = exports = e;
+
+},{}],7:[function(require,module,exports){
 "use strict";
 
 var _createClass = (function () { function defineProperties(target, props) { for (var key in props) { var prop = props[key]; prop.configurable = true; if (prop.value) prop.writable = true; } Object.defineProperties(target, props); } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
@@ -10063,24 +10144,22 @@ e.SketchControl = (function () {
     this.$selection = this.parent.$selection.append("div").attr("class", "sketch-control").attr("id", parent.id.replace(/.*-/, "sketch-control-"));
 
     this.$selection.append("button").attr("class", "sketch-control-element").classed("add", true).text("Add").on("click", function (d, i) {
-      debug("Add");
       _this.setMode("add");
     });
 
     this.$selection.append("button").attr("class", "sketch-control-element").classed("select", true).text("Select").on("click", function (d, i) {
-      debug("Select: %s, %s", d, i);
       _this.setMode("select");
     });
 
     this.$selection.append("button").attr("class", "sketch-control-element").classed("delete", true).text("Delete").on("click", function (d, i) {
-      debug("Delete");
       _this.setMode("delete");
     });
 
     this.$selection.append("button").attr("class", "sketch-control-element").classed("move", true).text("Move").on("click", function (d, i) {
-      debug("Move");
       _this.setMode("move");
     });
+
+    this.setMode("add");
   };
 
   _createClass(_class, {
@@ -10090,14 +10169,14 @@ e.SketchControl = (function () {
 
         switch (mode) {
           case "add":
-            debug("mode add");
             sisters.filter(".add").classed("selected", true);
-            this.parent.svg.brushRemove();
+            this.brushRemove();
             break;
           case "select":
-            debug("mode select");
             sisters.filter(".select").classed("selected", true);
-            this.parent.svg.brushAdd();
+            if (typeof this.parent.svg !== "undefined") {
+              this.parent.svg.brushAdd();
+            }
             break;
           case "delete":
             sisters.filter(".delete").classed("selected", true);
@@ -10105,13 +10184,25 @@ e.SketchControl = (function () {
           case "move":
             sisters.filter(".move").classed("selected", true);
             break;
-
         }
+        this.mode = mode;
+        return this;
       }
     },
-    id: {
-      value: function id() {
-        return "sketch-control-" + this.id;
+    brushAdd: {
+      value: function brushAdd() {
+        if (typeof this.parent.svg !== "undefined") {
+          this.parent.svg.brushAdd();
+        }
+        return this;
+      }
+    },
+    brushRemove: {
+      value: function brushRemove() {
+        if (typeof this.parent.svg !== "undefined") {
+          this.parent.svg.brushRemove();
+        }
+        return this;
       }
     }
   });
@@ -10121,8 +10212,10 @@ e.SketchControl = (function () {
 
 module.exports = exports = e;
 
-},{"./sketch.js":8,"d3":1,"debug":2}],7:[function(require,module,exports){
+},{"./sketch.js":9,"d3":1,"debug":2}],8:[function(require,module,exports){
 "use strict";
+
+var _slicedToArray = function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { var _arr = []; for (var _iterator = arr[Symbol.iterator](), _step; !(_step = _iterator.next()).done;) { _arr.push(_step.value); if (i && _arr.length === i) break; } return _arr; } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } };
 
 var _createClass = (function () { function defineProperties(target, props) { for (var key in props) { var prop = props[key]; prop.configurable = true; if (prop.value) prop.writable = true; } Object.defineProperties(target, props); } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
 
@@ -10141,6 +10234,7 @@ e.SketchSVG = (function () {
 
     _classCallCheck(this, _class);
 
+    var that = this;
     this.parent = parent;
     this.data = this.parent.data;
     this.width = width;
@@ -10151,42 +10245,77 @@ e.SketchSVG = (function () {
     this.y = d3.scale.linear().domain(this.data.domain.y).range([0, this.height]);
 
     this.$selection = this.parent.$selection.append("g").attr("transform", "translate(0,0)") // margins
-    .append("svg").attr("class", "sketch-svg").attr("id", this.parent.id.replace(/.*-/, "sketch-svg-"))
-    // .attr("pointer-events", "all")
+    .append("svg").attr("class", "sketch-svg").attr("id", this.parent.id.replace(/.*-/, "sketch-svg-")).attr("width", this.width).attr("height", this.height) // .attr("pointer-events", "all")
     .on("click.svg", function (d, i) {
-      debug("svg clicked: %s; %s", d, i);
+      if (d3.event.defaultPrevented) {
+        debug("svg click prevented");
+        return;
+      }
+
+      if (that.parent.control.mode === "add") {
+        var _d3$mouse = d3.mouse(this);
+
+        var _d3$mouse2 = _slicedToArray(_d3$mouse, 2);
+
+        var x = _d3$mouse2[0];
+        var y = _d3$mouse2[1];
+
+        that.data.addPoint({ x: that.x.invert(x),
+          y: that.y.invert(y) });
+        that.update();
+      }
     });
 
-    this.$selection.attr("width", this.width).attr("height", this.height);
-
-    this.brush = d3.svg.brush().x(this.x).y(this.y)
-    // .extent(defaultExtent)
-    .on("brush", function () {
+    this.brush = d3.svg.brush().x(this.x).y(this.y).on("brush", function () {
       _this.brushed();
     }).on("brushend", function () {
       _this.brushended();
     });
 
-    this.point = this.$selection.selectAll(".point").data(this.data.values).enter().append("circle").attr("class", "point").attr("cx", function (d) {
-      return _this.x(d[0]);
-    }).attr("cy", function (d) {
-      return _this.y(d[1]);
-    }).attr("r", 7).on("click", function (d, i) {
-      debug("circle clicked: %s; %s", d, i);
-      // invert selection
-      var s = d3.select(this);
-      s.classed("selected", !s.classed("selected"));
-      d3.event.stopPropagation();
-    });
-    // exit remove
+    this.update();
   };
 
   _createClass(_class, {
+    update: {
+      value: function update() {
+        var _this = this;
+
+        var that = this;
+        var $point = this.$selection.selectAll(".point").data(this.data.values).enter().append("circle").attr("class", "point").attr("cx", function (d) {
+          return _this.x(d.x);
+        }).attr("cy", function (d) {
+          return _this.y(d.y);
+        }).attr("r", 7).attr("name", function (d) {
+          return d.name;
+        }).on("click", function (d, i) {
+          debug("circle clicked: %s; %s", d, i);
+          switch (that.parent.control.mode) {
+            case "add":
+              e.pointInvertSelection(this);
+              d3.event.stopPropagation();
+              break;
+
+            case "select":
+              e.pointInvertSelection(this);
+              d3.event.stopPropagation();
+              break;
+
+            case "delete":
+              // exit remove
+              break;
+
+            case "move":
+              // drag
+              break;
+          }
+        });
+      }
+    },
     brushed: {
       value: function brushed() {
-        var point = this.$selection.selectAll(".point");
+        var $point = this.$selection.selectAll(".point");
         var extent = this.brush.extent();
-        point.each(function (d) {
+        $point.each(function (d) {
           d.selected = false;
         });
         if (this.brush.empty()) {
@@ -10194,8 +10323,8 @@ e.SketchSVG = (function () {
           // d3.event.target.extent(d3.select(this.parentNode));
           //  d3.select(this.parentNode).event(svgClick);
         } else {
-          point.classed("selected", function (d) {
-            return d[0] >= extent[0][0] && d[0] <= extent[1][0] && d[1] >= extent[0][1] && d[1] <= extent[1][1];
+          $point.classed("selected", function (d) {
+            return d.x >= extent[0][0] && d.x <= extent[1][0] && d.y >= extent[0][1] && d.y <= extent[1][1];
           });
         }
       }
@@ -10225,9 +10354,14 @@ e.SketchSVG = (function () {
   return _class;
 })();
 
+e.pointInvertSelection = function (that) {
+  var s = d3.select(that);
+  s.classed("selected", !s.classed("selected"));
+};
+
 module.exports = exports = e;
 
-},{"./sketch.js":8,"d3":1,"debug":2}],8:[function(require,module,exports){
+},{"./sketch.js":9,"d3":1,"debug":2}],9:[function(require,module,exports){
 "use strict";
 
 var _classCallCheck = function (instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } };
@@ -10267,4 +10401,4 @@ e.Sketch = (function () {
 
 module.exports = exports = e;
 
-},{"./sketch-control.js":6,"./sketch-svg.js":7,"d3":1,"debug":2}]},{},[5]);
+},{"./sketch-control.js":7,"./sketch-svg.js":8,"d3":1,"debug":2}]},{},[5]);
