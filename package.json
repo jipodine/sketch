@@ -1,11 +1,11 @@
 {
-  "name": "d4_test",
-  "version": "0.0.3",
+  "name": "sketch",
+  "version": "0.0.4",
   "description": "",
-  "main": "main.js",
+  "main": "sketch-main.js",
   "scripts": {
     "start": "open index.html",
-    "bundle": "browserify src/sketch-main.js -t babelify --outfile sketch-bundle.js"
+    "bundle": "browserify src/app.js -t babelify --outfile sketch-bundle.js"
   },
   "author": "jipodine",
   "license": "(o)",

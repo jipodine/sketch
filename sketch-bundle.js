@@ -1183,7 +1183,7 @@
           svg.remove();
         }
       }
-      if (d3_mouse_bug44083) point.x = e.pageX, point.y = e.pageY; else point.x = e.clientX,
+      if (d3_mouse_bug44083) point.x = e.pageX, point.y = e.pageY; else point.x = e.clientX, 
       point.y = e.clientY;
       point = point.matrixTransform(container.getScreenCTM().inverse());
       return [ point.x, point.y ];
@@ -1554,7 +1554,7 @@
     }
     function mousewheeled() {
       var dispatch = event.of(this, arguments);
-      if (mousewheelTimer) clearTimeout(mousewheelTimer); else translate0 = location(center0 = center || d3.mouse(this)),
+      if (mousewheelTimer) clearTimeout(mousewheelTimer); else translate0 = location(center0 = center || d3.mouse(this)), 
       d3_selection_interrupt.call(this), zoomstarted(dispatch);
       mousewheelTimer = setTimeout(function() {
         mousewheelTimer = null;
@@ -1923,7 +1923,7 @@
   d3.xhr = d3_xhrType(d3_identity);
   function d3_xhrType(response) {
     return function(url, mimeType, callback) {
-      if (arguments.length === 2 && typeof mimeType === "function") callback = mimeType,
+      if (arguments.length === 2 && typeof mimeType === "function") callback = mimeType, 
       mimeType = null;
       return d3_xhr(url, mimeType, response, callback);
     };
@@ -2761,7 +2761,7 @@
     return n ? (date.y = d3_time_expandYear(+n[0]), i + n[0].length) : -1;
   }
   function d3_time_parseZone(date, string, i) {
-    return /^[+-]\d{4}$/.test(string = string.slice(i, i + 5)) ? (date.Z = -string,
+    return /^[+-]\d{4}$/.test(string = string.slice(i, i + 5)) ? (date.Z = -string, 
     i + 5) : -1;
   }
   function d3_time_expandYear(d) {
@@ -2954,7 +2954,7 @@
     var λ00, φ00, λ0, cosφ0, sinφ0;
     d3_geo_area.point = function(λ, φ) {
       d3_geo_area.point = nextPoint;
-      λ0 = (λ00 = λ) * d3_radians, cosφ0 = Math.cos(φ = (φ00 = φ) * d3_radians / 2 + π / 4),
+      λ0 = (λ00 = λ) * d3_radians, cosφ0 = Math.cos(φ = (φ00 = φ) * d3_radians / 2 + π / 4), 
       sinφ0 = Math.sin(φ);
     };
     function nextPoint(λ, φ) {
@@ -4783,7 +4783,7 @@
       return _ ? center([ -_[1], _[0] ]) : (_ = center(), [ _[1], -_[0] ]);
     };
     projection.rotate = function(_) {
-      return _ ? rotate([ _[0], _[1], _.length > 2 ? _[2] + 90 : 90 ]) : (_ = rotate(),
+      return _ ? rotate([ _[0], _[1], _.length > 2 ? _[2] + 90 : 90 ]) : (_ = rotate(), 
       [ _[0], _[1], _[2] - 90 ]);
     };
     return rotate([ 0, 0, 90 ]);
@@ -5637,7 +5637,7 @@
     };
     quadtree.extent = function(_) {
       if (!arguments.length) return x1 == null ? null : [ [ x1, y1 ], [ x2, y2 ] ];
-      if (_ == null) x1 = y1 = x2 = y2 = null; else x1 = +_[0][0], y1 = +_[0][1], x2 = +_[1][0],
+      if (_ == null) x1 = y1 = x2 = y2 = null; else x1 = +_[0][0], y1 = +_[0][1], x2 = +_[1][0], 
       y2 = +_[1][1];
       return quadtree;
     };
@@ -7341,7 +7341,7 @@
         return d3_layout_treemapPad(node, x);
       }
       var type;
-      pad = (padding = x) == null ? d3_layout_treemapPadNull : (type = typeof x) === "function" ? padFunction : type === "number" ? (x = [ x, x, x, x ],
+      pad = (padding = x) == null ? d3_layout_treemapPadNull : (type = typeof x) === "function" ? padFunction : type === "number" ? (x = [ x, x, x, x ], 
       padConstant) : padConstant;
       return treemap;
     };
@@ -7641,7 +7641,7 @@
     scale.tickFormat = function(n, format) {
       if (!arguments.length) return d3_scale_logFormat;
       if (arguments.length < 2) format = d3_scale_logFormat; else if (typeof format !== "function") format = d3.format(format);
-      var k = Math.max(.1, n / scale.ticks().length), f = positive ? (e = 1e-12, Math.ceil) : (e = -1e-12,
+      var k = Math.max(.1, n / scale.ticks().length), f = positive ? (e = 1e-12, Math.ceil) : (e = -1e-12, 
       Math.floor), e;
       return function(d) {
         return d / pow(f(log(d) + e)) <= k ? format(d) : "";
@@ -7741,7 +7741,7 @@
     };
     scale.rangePoints = function(x, padding) {
       if (arguments.length < 2) padding = 0;
-      var start = x[0], stop = x[1], step = domain.length < 2 ? (start = (start + stop) / 2,
+      var start = x[0], stop = x[1], step = domain.length < 2 ? (start = (start + stop) / 2, 
       0) : (stop - start) / (domain.length - 1 + padding);
       range = steps(start + step * padding / 2, step);
       rangeBand = 0;
@@ -7753,7 +7753,7 @@
     };
     scale.rangeRoundPoints = function(x, padding) {
       if (arguments.length < 2) padding = 0;
-      var start = x[0], stop = x[1], step = domain.length < 2 ? (start = stop = Math.round((start + stop) / 2),
+      var start = x[0], stop = x[1], step = domain.length < 2 ? (start = stop = Math.round((start + stop) / 2), 
       0) : (stop - start) / (domain.length - 1 + padding) | 0;
       range = steps(start + Math.round(step * padding / 2 + (stop - start - (domain.length - 1 + padding) * step) / 2), step);
       rangeBand = 0;
@@ -8176,7 +8176,7 @@
     return points.length < 4 ? d3_svg_lineLinear(points) : points[1] + d3_svg_lineHermite(points.slice(1, -1), d3_svg_lineCardinalTangents(points, tension));
   }
   function d3_svg_lineCardinalClosed(points, tension) {
-    return points.length < 3 ? d3_svg_lineLinear(points) : points[0] + d3_svg_lineHermite((points.push(points[0]),
+    return points.length < 3 ? d3_svg_lineLinear(points) : points[0] + d3_svg_lineHermite((points.push(points[0]), 
     points), d3_svg_lineCardinalTangents([ points[points.length - 2] ].concat(points, [ points[1] ]), tension));
   }
   function d3_svg_lineCardinal(points, tension) {
@@ -8934,7 +8934,7 @@
         var g = d3.select(this);
         var scale0 = this.__chart__ || scale, scale1 = this.__chart__ = scale.copy();
         var ticks = tickValues == null ? scale1.ticks ? scale1.ticks.apply(scale1, tickArguments_) : scale1.domain() : tickValues, tickFormat = tickFormat_ == null ? scale1.tickFormat ? scale1.tickFormat.apply(scale1, tickArguments_) : d3_identity : tickFormat_, tick = g.selectAll(".tick").data(ticks, scale1), tickEnter = tick.enter().insert("g", ".domain").attr("class", "tick").style("opacity", ε), tickExit = d3.transition(tick.exit()).style("opacity", ε).remove(), tickUpdate = d3.transition(tick.order()).style("opacity", 1), tickSpacing = Math.max(innerTickSize, 0) + tickPadding, tickTransform;
-        var range = d3_scaleRange(scale1), path = g.selectAll(".domain").data([ 0 ]), pathUpdate = (path.enter().append("path").attr("class", "domain"),
+        var range = d3_scaleRange(scale1), path = g.selectAll(".domain").data([ 0 ]), pathUpdate = (path.enter().append("path").attr("class", "domain"), 
         d3.transition(path));
         tickEnter.append("line");
         tickEnter.append("text");
@@ -10007,15 +10007,12 @@ function plural(ms, n, name) {
 },{}],5:[function(require,module,exports){
 "use strict";
 
-var debug = require("debug")("sketch");
+var debug = require("debug")("sketch:app");
 var d3 = require("d3");
 
-var app = window.app || {};
+var sketch = require("./sketch.js");
 
-function exclusiveChildSelection(element) {
-  d3.selectAll(element.parentNode.childNodes).classed("selected", false);
-  d3.select(element).classed("selected", true);
-}
+var app = window.app || {};
 
 var data = {};
 data.domain = { x: [-10, 10], y: [-5, 5] };
@@ -10026,95 +10023,7 @@ data.values = d3.range(10).map(function () {
 });
 
 app.init = function () {
-  var addCtrl = false;
-
-  var $sketch = d3.select("#sketch");
-
-  var $sketchControl = $sketch.append("div").attr("class", "sketch-control");
-
-  $sketchControl.append("button").attr("id", "clickAdd").attr("class", "sketch-control-element").text("Add").on("click", function (d, i) {
-    debug("Add");
-    addCtrl = true;
-    exclusiveChildSelection(this);
-  });
-
-  $sketchControl.append("button").attr("id", "clickSelect").attr("class", "sketch-control-element").text("Select").on("click", function (d, i) {
-    debug("Select");
-    addCtrl = false;
-    exclusiveChildSelection(this);
-  });
-
-  $sketchControl.append("button").attr("id", "clickDelete").attr("class", "sketch-control-element").text("Delete").on("click", function (d, i) {
-    debug("Delete");
-    exclusiveChildSelection(this);
-  });
-
-  $sketchControl.append("button").attr("id", "clickMove").attr("class", "sketch-control-element").text("Move").on("click", function (d, i) {
-    debug("Move");
-    exclusiveChildSelection(this);
-  });
-
-  app.sketch = {};
-  app.sketch.margin = { top: 0, bottom: 0, left: 0, right: 0 };
-
-  var width = $sketch[0][0].clientWidth;
-  var height = Math.floor(width * (data.domain.y[1] - data.domain.y[0]) / (data.domain.x[1] - data.domain.x[0]));
-  app.sketch.width = width - app.sketch.margin.left - app.sketch.margin.right;
-  app.sketch.height = height - app.sketch.margin.top - app.sketch.margin.bottom;
-
-  var $sketchSVG = $sketch.append("div").attr("class", "sketch-svg").append("svg");
-
-  var x = d3.scale.linear().domain(data.domain.x).range([0, app.sketch.width]);
-
-  var y = d3.scale.linear().domain(data.domain.y).range([0, app.sketch.height]);
-
-  $sketchSVG.attr("width", app.sketch.width + app.sketch.margin.left + app.sketch.margin.right).attr("height", app.sketch.height + app.sketch.margin.top + app.sketch.margin.bottom).append("g").attr("transform", "translate(" + app.sketch.margin.left + "," + app.sketch.margin.top + ")");
-
-  var brush = d3.svg.brush().x(x).y(y)
-  // .extent(defaultExtent)
-  .on("brush", brushed).on("brushend", brushended);
-
-  $sketchSVG.append("g").attr("class", "brush").call(brush).call(brush.event);
-
-  var point = $sketchSVG.selectAll(".point").data(data.values).enter().append("circle").attr("class", "point").attr("cx", function (d) {
-    return x(d[0]);
-  }).attr("cy", function (d) {
-    return y(d[1]);
-  }).attr("r", 7).on("click", function (d, i) {
-    debug("circle clicked: %s; %s", d, i);
-    // invert selection
-    var s = d3.select(this);
-    s.classed("selected", !s.classed("selected"));
-    d3.event.stopPropagation();
-  });
-
-  // exit remove
-
-  function brushed() {
-    var point = $sketchSVG.selectAll(".point");
-    var extent = brush.extent();
-    point.each(function (d) {
-      d.selected = false;
-    });
-    if (brush.empty()) {
-      debug("brush empty");
-    } else {
-      point.classed("selected", function (d) {
-        return d[0] >= extent[0][0] && d[0] <= extent[1][0] && d[1] >= extent[0][1] && d[1] <= extent[1][1];
-      });
-    }
-  }
-
-  function brushended() {
-    if (!d3.event.sourceEvent) {
-      // only transition after input
-      return;
-    }
-    // d3.select(this).transition()
-    //   .duration(brush.empty() ? 0 : 750)
-    //   .call(brush.extent(defaultExtent))
-    //   .call(brush.event);
-  }
+  var sketch1 = new sketch.Sketch(d3.select("body"), data);
 }; // init
 
 window.app = app;
@@ -10123,4 +10032,239 @@ window.addEventListener("DOMContentLoaded", function () {
   app.init();
 });
 
-},{"d3":1,"debug":2}]},{},[5]);
+},{"./sketch.js":8,"d3":1,"debug":2}],6:[function(require,module,exports){
+"use strict";
+
+var _createClass = (function () { function defineProperties(target, props) { for (var key in props) { var prop = props[key]; prop.configurable = true; if (prop.value) prop.writable = true; } Object.defineProperties(target, props); } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
+
+var _classCallCheck = function (instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } };
+
+var d3 = require("d3");
+var debug = require("debug")("sketch:control");
+
+var sketch = require("./sketch.js");
+
+var e = {};
+
+var exclusiveChildSelection = function exclusiveChildSelection(node) {
+  var sisters = node.parentNode.childNodes;
+  d3.selectAll(sisters).classed("selected", false);
+  d3.select(node).classed("selected", true);
+};
+
+e.SketchControl = (function () {
+  var _class = function (parent) {
+    var _this = this;
+
+    _classCallCheck(this, _class);
+
+    this.parent = parent;
+
+    this.$selection = this.parent.$selection.append("div").attr("class", "sketch-control").attr("id", parent.id.replace(/.*-/, "sketch-control-"));
+
+    this.$selection.append("button").attr("class", "sketch-control-element").classed("add", true).text("Add").on("click", function (d, i) {
+      debug("Add");
+      _this.setMode("add");
+    });
+
+    this.$selection.append("button").attr("class", "sketch-control-element").classed("select", true).text("Select").on("click", function (d, i) {
+      debug("Select: %s, %s", d, i);
+      _this.setMode("select");
+    });
+
+    this.$selection.append("button").attr("class", "sketch-control-element").classed("delete", true).text("Delete").on("click", function (d, i) {
+      debug("Delete");
+      _this.setMode("delete");
+    });
+
+    this.$selection.append("button").attr("class", "sketch-control-element").classed("move", true).text("Move").on("click", function (d, i) {
+      debug("Move");
+      _this.setMode("move");
+    });
+  };
+
+  _createClass(_class, {
+    setMode: {
+      value: function setMode(mode) {
+        var sisters = d3.selectAll(this.$selection.node().childNodes).classed("selected", false);
+
+        switch (mode) {
+          case "add":
+            debug("mode add");
+            sisters.filter(".add").classed("selected", true);
+            this.parent.svg.brushRemove();
+            break;
+          case "select":
+            debug("mode select");
+            sisters.filter(".select").classed("selected", true);
+            this.parent.svg.brushAdd();
+            break;
+          case "delete":
+            sisters.filter(".delete").classed("selected", true);
+            break;
+          case "move":
+            sisters.filter(".move").classed("selected", true);
+            break;
+
+        }
+      }
+    },
+    id: {
+      value: function id() {
+        return "sketch-control-" + this.id;
+      }
+    }
+  });
+
+  return _class;
+})(); // SketchControl class
+
+module.exports = exports = e;
+
+},{"./sketch.js":8,"d3":1,"debug":2}],7:[function(require,module,exports){
+"use strict";
+
+var _createClass = (function () { function defineProperties(target, props) { for (var key in props) { var prop = props[key]; prop.configurable = true; if (prop.value) prop.writable = true; } Object.defineProperties(target, props); } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
+
+var _classCallCheck = function (instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } };
+
+var d3 = require("d3");
+var debug = require("debug")("sketch:svg");
+
+var sketch = require("./sketch.js");
+
+var e = {};
+
+e.SketchSVG = (function () {
+  var _class = function (parent, width, height) {
+    var _this = this;
+
+    _classCallCheck(this, _class);
+
+    this.parent = parent;
+    this.data = this.parent.data;
+    this.width = width;
+    this.height = height;
+
+    this.x = d3.scale.linear().domain(this.data.domain.x).range([0, this.width]);
+
+    this.y = d3.scale.linear().domain(this.data.domain.y).range([0, this.height]);
+
+    this.$selection = this.parent.$selection.append("g").attr("transform", "translate(0,0)") // margins
+    .append("svg").attr("class", "sketch-svg").attr("id", this.parent.id.replace(/.*-/, "sketch-svg-"))
+    // .attr("pointer-events", "all")
+    .on("click.svg", function (d, i) {
+      debug("svg clicked: %s; %s", d, i);
+    });
+
+    this.$selection.attr("width", this.width).attr("height", this.height);
+
+    this.brush = d3.svg.brush().x(this.x).y(this.y)
+    // .extent(defaultExtent)
+    .on("brush", function () {
+      _this.brushed();
+    }).on("brushend", function () {
+      _this.brushended();
+    });
+
+    this.point = this.$selection.selectAll(".point").data(this.data.values).enter().append("circle").attr("class", "point").attr("cx", function (d) {
+      return _this.x(d[0]);
+    }).attr("cy", function (d) {
+      return _this.y(d[1]);
+    }).attr("r", 7).on("click", function (d, i) {
+      debug("circle clicked: %s; %s", d, i);
+      // invert selection
+      var s = d3.select(this);
+      s.classed("selected", !s.classed("selected"));
+      d3.event.stopPropagation();
+    });
+    // exit remove
+  };
+
+  _createClass(_class, {
+    brushed: {
+      value: function brushed() {
+        var point = this.$selection.selectAll(".point");
+        var extent = this.brush.extent();
+        point.each(function (d) {
+          d.selected = false;
+        });
+        if (this.brush.empty()) {
+          debug("brush empty");
+          // d3.event.target.extent(d3.select(this.parentNode));
+          //  d3.select(this.parentNode).event(svgClick);
+        } else {
+          point.classed("selected", function (d) {
+            return d[0] >= extent[0][0] && d[0] <= extent[1][0] && d[1] >= extent[0][1] && d[1] <= extent[1][1];
+          });
+        }
+      }
+    },
+    brushended: {
+      value: function brushended() {
+        if (!d3.event.sourceEvent) {
+          debug("brush not not source");
+          // only transition after input
+          return;
+        }
+        debug("brush source event");
+      }
+    },
+    brushRemove: {
+      value: function brushRemove() {
+        d3.selectAll(this.$selection.node().childNodes).filter(".brush").remove();
+      }
+    },
+    brushAdd: {
+      value: function brushAdd() {
+        this.$selection.insert("g", ":first-child").attr("class", "brush").call(this.brush).call(this.brush.event);
+      }
+    }
+  });
+
+  return _class;
+})();
+
+module.exports = exports = e;
+
+},{"./sketch.js":8,"d3":1,"debug":2}],8:[function(require,module,exports){
+"use strict";
+
+var _classCallCheck = function (instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } };
+
+var d3 = require("d3");
+var debug = require("debug")("sketch:sketch");
+
+var control = require("./sketch-control.js");
+var svg = require("./sketch-svg.js");
+
+var e = {};
+
+e.Sketch = (function () {
+  var _class = function ($parent, data) {
+    _classCallCheck(this, _class);
+
+    // class
+    e.Sketch.count = e.Sketch.count || 0;
+    ++e.Sketch.count;
+
+    // object
+    this.$parent = $parent;
+    this.data = data;
+    this.id = "sketch-" + e.Sketch.count;
+    this.$selection = $parent.append("div").attr("class", "sketch").attr("id", this.id);
+
+    this.control = new control.SketchControl(this);
+
+    var svgWidth = this.$selection.node().clientWidth;
+    var svgHeight = Math.floor(svgWidth * (data.domain.y[1] - data.domain.y[0]) / (data.domain.x[1] - data.domain.x[0]));
+
+    this.svg = new svg.SketchSVG(this, svgWidth, svgHeight);
+  };
+
+  return _class;
+})();
+
+module.exports = exports = e;
+
+},{"./sketch-control.js":6,"./sketch-svg.js":7,"d3":1,"debug":2}]},{},[5]);
