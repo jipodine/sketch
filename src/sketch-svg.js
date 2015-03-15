@@ -76,8 +76,8 @@ e.SketchSVG = class {
         let updated = false;
         for (let s = 0; s < $moved[0].length; ++ s) {
           const avatar = $moved[0][s].__data__;
-          const index = that.data.values.findIndex( (e, i) => {
-            return that.data.values[i].sameAs(avatar);
+          const index = that.data.values.findIndex( (element) => {
+            return element.sameAs(avatar);
           });
 
           if(index >= 0 && index < that.data.values.length) {
@@ -155,8 +155,8 @@ e.SketchSVG = class {
           let updated = false;
           for (let s = 0; s < $deleted[0].length; ++ s) {
             const avatar = $deleted[0][s].__data__;
-            const index = that.data.values.findIndex( (e, i) => {
-              return that.data.values[i].sameAs(avatar);
+            const index = that.data.values.findIndex( (element) => {
+              return element.sameAs(avatar);
             });
 
             if(index >= 0 && index < that.data.values.length) {

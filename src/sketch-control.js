@@ -49,6 +49,7 @@ e.SketchControl = class {
   }
 
   setMode(mode) {
+    // exclusive
     let sisters = d3.selectAll(this.$selection.node().childNodes)
       .classed('selected', false);
 

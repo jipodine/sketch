@@ -3,6 +3,7 @@ const d3 = require('d3');
 
 let app = window.app || {};
 
+app.polyfills = require('./polyfills.js');
 app.sketch = require('./sketch.js');
 app.data = require('./data.js');
 
