@@ -80,15 +80,15 @@ e.SketchSVG = class {
             return that.data.values[i].sameAs(avatar);
           });
 
-          if(typeof index !== 'undefined') {
+          if(index >= 0 && index < that.data.values.length) {
             let original = that.data.values[index];
             const translate = e.getTranslate($moved);
             original.x =
               that.x.invert(that.x(original.x) + translate.x);
             original.y =
               that.y.invert(that.y(original.y) + translate.y);
+            updated = true;
           }
-          updated = true;
         } // each point of the selection
 
         if(updated) {
@@ -105,7 +105,8 @@ e.SketchSVG = class {
     // exit
     this.$selection.selectAll(".point")
       .data(this.data.values)
-      .exit();
+      .exit()
+      .remove();
 
     // update
     this.$selection.selectAll(".point")
@@ -136,7 +137,6 @@ e.SketchSVG = class {
           return;
         }
 
-        debug('circle clicked: %s; %s', d, i);
         switch(that.parent.control.mode) {
         case 'add':
           e.invertSelection(d3.select(this));
@@ -147,8 +147,29 @@ e.SketchSVG = class {
           break;
 
         case 'delete':
-          debug('delete point');
-          // exit remove
+          let $deleted = d3.select(this);
+          if($deleted.classed('selected') ) {
+            $deleted = e.sistersSelectedSelection($deleted);
+          }
+
+          let updated = false;
+          for (let s = 0; s < $deleted[0].length; ++ s) {
+            const avatar = $deleted[0][s].__data__;
+            const index = that.data.values.findIndex( (e, i) => {
+              return that.data.values[i].sameAs(avatar);
+            });
+
+            if(index >= 0 && index < that.data.values.length) {
+              that.data.values.splice(index, 1);
+              // remove selection (which is index-based)
+              d3.select($deleted[0][s]).classed('selected', false);
+              updated = true;
+            }
+          } // for each point of the selection
+
+          if(updated) {
+            that.update();
+          }
           break;
 
         case 'move':

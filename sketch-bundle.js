@@ -10297,13 +10297,13 @@ e.SketchSVG = (function () {
             return that.data.values[i].sameAs(avatar);
           });
 
-          if (typeof index !== "undefined") {
+          if (index >= 0 && index < that.data.values.length) {
             var original = that.data.values[index];
             var translate = e.getTranslate($moved);
             original.x = that.x.invert(that.x(original.x) + translate.x);
             original.y = that.y.invert(that.y(original.y) + translate.y);
+            updated = true;
           }
-          updated = true;
         })(s);
       } // each point of the selection
 
@@ -10322,7 +10322,7 @@ e.SketchSVG = (function () {
 
         var that = this;
         // exit
-        this.$selection.selectAll(".point").data(this.data.values).exit();
+        this.$selection.selectAll(".point").data(this.data.values).exit().remove();
 
         // update
         this.$selection.selectAll(".point").data(this.data.values).attr("cx", function (d) {
@@ -10350,7 +10350,6 @@ e.SketchSVG = (function () {
             return;
           }
 
-          debug("circle clicked: %s; %s", d, i);
           switch (that.parent.control.mode) {
             case "add":
               e.invertSelection(d3.select(this));
@@ -10361,8 +10360,31 @@ e.SketchSVG = (function () {
               break;
 
             case "delete":
-              debug("delete point");
-              // exit remove
+              var $deleted = d3.select(this);
+              if ($deleted.classed("selected")) {
+                $deleted = e.sistersSelectedSelection($deleted);
+              }
+
+              var updated = false;
+              for (var s = 0; s < $deleted[0].length; ++s) {
+                (function (s) {
+                  var avatar = $deleted[0][s].__data__;
+                  var index = that.data.values.findIndex(function (e, i) {
+                    return that.data.values[i].sameAs(avatar);
+                  });
+
+                  if (index >= 0 && index < that.data.values.length) {
+                    that.data.values.splice(index, 1);
+                    // remove selection (which is index-based)
+                    d3.select($deleted[0][s]).classed("selected", false);
+                    updated = true;
+                  }
+                })(s);
+              } // for each point of the selection
+
+              if (updated) {
+                that.update();
+              }
               break;
 
             case "move":
