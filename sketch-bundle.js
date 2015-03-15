@@ -10127,12 +10127,6 @@ var sketch = require("./sketch.js");
 
 var e = {};
 
-var exclusiveChildSelection = function exclusiveChildSelection(node) {
-  var sisters = node.parentNode.childNodes;
-  d3.selectAll(sisters).classed("selected", false);
-  d3.select(node).classed("selected", true);
-};
-
 e.SketchControl = (function () {
   var _class = function (parent) {
     var _this = this;
@@ -10282,28 +10276,38 @@ e.SketchSVG = (function () {
     .on("drag.svg", function (d, i) {
       var $move = d3.select(this);
       if ($move.classed("selected")) {
-        debug("move group");
-      } else {
-        debug("move point");
-        $move.attr("transform", "translate(" + d3.event.x + "," + d3.event.y + ")");
+        $move = e.sistersSelectedSelection($move);
       }
+
+      $move.attr("transform", "translate(" + d3.event.x + "," + d3.event.y + ")");
+
       d3.event.sourceEvent.stopPropagation();
     }) // drag
     .on("dragend.svg", function (d, i) {
       var $moved = d3.select(this);
-      var avatar = $moved[0][0].__data__;
-      var index = that.data.values.findIndex(function (e, i) {
-        return that.data.values[i].sameAs(avatar);
-      });
+      if ($moved.classed("selected")) {
+        $moved = e.sistersSelectedSelection($moved);
+      }
 
-      if (typeof index !== "undefined") {
-        var original = that.data.values[index];
-        var translate = e.getTranslate($moved);
+      var updated = false;
+      for (var s = 0; s < $moved[0].length; ++s) {
+        (function (s) {
+          var avatar = $moved[0][s].__data__;
+          var index = that.data.values.findIndex(function (e, i) {
+            return that.data.values[i].sameAs(avatar);
+          });
 
-        original.x = that.x.invert(that.x(original.x) + translate.x);
+          if (typeof index !== "undefined") {
+            var original = that.data.values[index];
+            var translate = e.getTranslate($moved);
+            original.x = that.x.invert(that.x(original.x) + translate.x);
+            original.y = that.y.invert(that.y(original.y) + translate.y);
+          }
+          updated = true;
+        })(s);
+      } // each point of the selection
 
-        original.y = that.y.invert(that.y(original.y) + translate.y);
-
+      if (updated) {
         that.update();
       }
     }); // dragend
@@ -10349,11 +10353,11 @@ e.SketchSVG = (function () {
           debug("circle clicked: %s; %s", d, i);
           switch (that.parent.control.mode) {
             case "add":
-              e.pointInvertSelection(this);
+              e.invertSelection(d3.select(this));
               break;
 
             case "select":
-              e.pointInvertSelection(this);
+              e.invertSelection(d3.select(this));
               break;
 
             case "delete":
@@ -10362,7 +10366,7 @@ e.SketchSVG = (function () {
               break;
 
             case "move":
-              e.pointInvertSelection(this);
+              e.invertSelection(d3.select(this));
               // drag
               break;
           }
@@ -10419,9 +10423,12 @@ e.SketchSVG = (function () {
 })();
 
 // helpers
-e.pointInvertSelection = function (that) {
-  var s = d3.select(that);
-  s.classed("selected", !s.classed("selected"));
+e.invertSelection = function ($point) {
+  $point.classed("selected", !$point.classed("selected"));
+};
+
+e.sistersSelectedSelection = function ($point) {
+  return d3.selectAll($point.node().parentNode.childNodes).filter(".selected");
 };
 
 e.getTranslate = function ($point) {

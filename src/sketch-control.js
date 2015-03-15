@@ -5,15 +5,6 @@ const sketch = require('./sketch.js');
 
 let e = {};
 
-let exclusiveChildSelection = function (node) {
-    var sisters = node.parentNode.childNodes;
-    d3.selectAll(sisters)
-      .classed('selected', false);
-    d3.select(node)
-      .classed('selected', true);
-};
-
-
 e.SketchControl = class {
   constructor(parent) {
     this.parent = parent;
