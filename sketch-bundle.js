@@ -10062,13 +10062,13 @@ e.Point = (function () {
 
     this.x = point.x || 0;
     this.y = point.y || 0;
-    this.name = typeof point.name != "undefined" ? point.name : e.randomName(3);
+    this.name = typeof point.name !== "undefined" ? point.name : e.randomName(3);
   };
 
   _createClass(_class, {
-    same: {
-      value: function same(point) {
-        return this.x === point.x && this.y === point.y && this.name === this.name;
+    sameAs: {
+      value: function sameAs(point) {
+        return this.x === point.x && this.y === point.y && this.name === point.name;
       }
     }
   });
@@ -10174,15 +10174,15 @@ e.SketchControl = (function () {
             break;
           case "select":
             sisters.filter(".select").classed("selected", true);
-            if (typeof this.parent.svg !== "undefined") {
-              this.parent.svg.brushAdd();
-            }
+            this.brushAdd();
             break;
           case "delete":
             sisters.filter(".delete").classed("selected", true);
+            this.brushRemove();
             break;
           case "move":
             sisters.filter(".move").classed("selected", true);
+            this.brushRemove();
             break;
         }
         this.mode = mode;
@@ -10225,6 +10225,7 @@ var d3 = require("d3");
 var debug = require("debug")("sketch:svg");
 
 var sketch = require("./sketch.js");
+var data = require("./data.js");
 
 var e = {};
 
@@ -10272,6 +10273,41 @@ e.SketchSVG = (function () {
       _this.brushended();
     });
 
+    this.drag = d3.behavior.drag().origin(function (d) {
+      var $origin = d3.select(this);
+      var translate = e.getTranslate($origin);
+      return { x: $origin.attr("x") + translate.x,
+        y: $origin.attr("y") + translate.y };
+    }) // origin
+    .on("drag.svg", function (d, i) {
+      var $move = d3.select(this);
+      if ($move.classed("selected")) {
+        debug("move group");
+      } else {
+        debug("move point");
+        $move.attr("transform", "translate(" + d3.event.x + "," + d3.event.y + ")");
+      }
+      d3.event.sourceEvent.stopPropagation();
+    }) // drag
+    .on("dragend.svg", function (d, i) {
+      var $moved = d3.select(this);
+      var avatar = $moved[0][0].__data__;
+      var index = that.data.values.findIndex(function (e, i) {
+        return that.data.values[i].sameAs(avatar);
+      });
+
+      if (typeof index !== "undefined") {
+        var original = that.data.values[index];
+        var translate = e.getTranslate($moved);
+
+        original.x = that.x.invert(that.x(original.x) + translate.x);
+
+        original.y = that.y.invert(that.y(original.y) + translate.y);
+
+        that.update();
+      }
+    }); // dragend
+
     this.update();
   };
 
@@ -10281,34 +10317,60 @@ e.SketchSVG = (function () {
         var _this = this;
 
         var that = this;
-        var $point = this.$selection.selectAll(".point").data(this.data.values).enter().append("circle").attr("class", "point").attr("cx", function (d) {
+        // exit
+        this.$selection.selectAll(".point").data(this.data.values).exit();
+
+        // update
+        this.$selection.selectAll(".point").data(this.data.values).attr("cx", function (d) {
+          return _this.x(d.x);
+        }).attr("cy", function (d) {
+          return _this.y(d.y);
+        }).attr("transform", function (d, i) {
+          var $point = d3.select(this);
+          if ($point.attr("transform")) {
+            $point.attr("transform", $point.attr("transform").replace(/translate\([+-]?[0-9]+\,[+-]?[0-9]+\)/, ""));
+          }
+          return $point.attr("transform") || null;
+        });
+
+        // enter
+        this.$selection.selectAll(".point").data(this.data.values).enter().append("circle").attr("class", "point").attr("cx", function (d) {
           return _this.x(d.x);
         }).attr("cy", function (d) {
           return _this.y(d.y);
         }).attr("r", 7).attr("name", function (d) {
           return d.name;
         }).on("click", function (d, i) {
+          if (d3.event.defaultPrevented) {
+            debug("svg click prevented");
+            return;
+          }
+
           debug("circle clicked: %s; %s", d, i);
           switch (that.parent.control.mode) {
             case "add":
               e.pointInvertSelection(this);
-              d3.event.stopPropagation();
               break;
 
             case "select":
               e.pointInvertSelection(this);
-              d3.event.stopPropagation();
               break;
 
             case "delete":
+              debug("delete point");
               // exit remove
               break;
 
             case "move":
+              e.pointInvertSelection(this);
               // drag
               break;
           }
-        });
+
+          d3.event.stopPropagation();
+        }) // circle clicked
+
+        .call(this.drag);
       }
     },
     brushed: {
@@ -10346,7 +10408,9 @@ e.SketchSVG = (function () {
     },
     brushAdd: {
       value: function brushAdd() {
-        this.$selection.insert("g", ":first-child").attr("class", "brush").call(this.brush).call(this.brush.event);
+        if (d3.selectAll(this.$selection.node().childNodes).filter(".brush")[0].length === 0) {
+          this.$selection.insert("g", ":first-child").attr("class", "brush").call(this.brush).call(this.brush.event);
+        }
       }
     }
   });
@@ -10354,14 +10418,20 @@ e.SketchSVG = (function () {
   return _class;
 })();
 
+// helpers
 e.pointInvertSelection = function (that) {
   var s = d3.select(that);
   s.classed("selected", !s.classed("selected"));
 };
 
+e.getTranslate = function ($point) {
+  return { x: d3.transform($point.attr("transform")).translate[0],
+    y: d3.transform($point.attr("transform")).translate[1] };
+};
+
 module.exports = exports = e;
 
-},{"./sketch.js":9,"d3":1,"debug":2}],9:[function(require,module,exports){
+},{"./data.js":6,"./sketch.js":9,"d3":1,"debug":2}],9:[function(require,module,exports){
 "use strict";
 
 var _classCallCheck = function (instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } };

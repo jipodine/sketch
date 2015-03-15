@@ -17,14 +17,14 @@ e.Point = class {
   constructor(point = {}) {
     this.x = point.x || 0;
     this.y = point.y || 0;
-    this.name = (typeof point.name != 'undefined'
+    this.name = (typeof point.name !== 'undefined'
                  ? point.name : e.randomName(3) );
   }
 
-  same(point) {
+  sameAs(point) {
     return this.x === point.x
       && this.y === point.y
-      && this.name === this.name;
+      && this.name === point.name;
   }
 };
 
@@ -50,12 +50,6 @@ e.Set = class {
   }
 
 };
-
-
-
-
-
-
 
 
 module.exports = exports = e;

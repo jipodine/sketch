@@ -68,15 +68,15 @@ e.SketchControl = class {
       break;
     case 'select':
       sisters.filter('.select').classed('selected', true);
-      if (typeof this.parent.svg !== 'undefined') {
-        this.parent.svg.brushAdd();
-      }
+      this.brushAdd();
       break;
     case 'delete':
       sisters.filter('.delete').classed('selected', true);
+      this.brushRemove();
       break;
     case 'move':
       sisters.filter('.move').classed('selected', true);
+      this.brushRemove();
       break;
     }
     this.mode = mode;

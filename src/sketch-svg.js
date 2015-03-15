@@ -2,6 +2,7 @@ const d3 = require('d3');
 const debug = require('debug')('sketch:svg');
 
 const sketch = require('./sketch.js');
+const data = require('./data.js');
 
 let e = {};
 
@@ -48,12 +49,73 @@ e.SketchSVG = class {
       .on("brush", () => { this.brushed(); } )
       .on("brushend", () => { this.brushended(); } );
 
+    this.drag = d3.behavior.drag()
+      .origin(function(d) {
+        const $origin = d3.select(this);
+        const translate = e.getTranslate($origin);
+        return { x: $origin.attr('x') + translate.x,
+                 y: $origin.attr('y') + translate.y };
+      }) // origin
+      .on('drag.svg', function (d,i) {
+        const $move = d3.select(this);
+        if($move.classed('selected') ) {
+          debug('move group');
+        } else {
+          debug('move point');
+          $move.attr('transform',
+                     'translate(' + d3.event.x
+                     + ',' + d3.event.y + ')' );
+        }
+        d3.event.sourceEvent.stopPropagation();
+      }) // drag
+      .on('dragend.svg', function (d, i) {
+        const $moved = d3.select(this);
+        const avatar = $moved[0][0].__data__;
+        const index = that.data.values.findIndex( (e, i) => {
+          return that.data.values[i].sameAs(avatar);
+        });
+
+        if(typeof index !== 'undefined') {
+          let original = that.data.values[index];
+          const translate = e.getTranslate($moved);
+
+          original.x =
+            that.x.invert(that.x(original.x) + translate.x);
+
+          original.y =
+            that.y.invert(that.y(original.y) + translate.y);
+
+          that.update();
+        }
+
+      }); // dragend
+
     this.update();
   }
 
   update() {
     const that = this;
-    const $point = this.$selection.selectAll(".point")
+    // exit
+    this.$selection.selectAll(".point")
+      .data(this.data.values)
+      .exit();
+
+    // update
+    this.$selection.selectAll(".point")
+      .data(this.data.values)
+      .attr("cx", (d) => { return this.x(d.x); })
+      .attr("cy", (d) => { return this.y(d.y); })
+      .attr('transform', function (d, i) {
+        let $point = d3.select(this);
+        if($point.attr('transform') ) {
+          $point.attr("transform", $point.attr("transform")
+                      .replace(/translate\([+-]?[0-9]+\,[+-]?[0-9]+\)/,'') );
+        }
+        return $point.attr('transform') || null;
+      });
+
+    // enter
+    this.$selection.selectAll(".point")
       .data(this.data.values)
       .enter().append("circle")
       .attr("class", "point")
@@ -62,29 +124,36 @@ e.SketchSVG = class {
       .attr("r", 7)
       .attr("name", (d) => { return d.name; })
       .on('click', function (d, i) {
+        if(d3.event.defaultPrevented) {
+          debug('svg click prevented');
+          return;
+        }
+
         debug('circle clicked: %s; %s', d, i);
         switch(that.parent.control.mode) {
         case 'add':
           e.pointInvertSelection(this);
-          d3.event.stopPropagation();
           break;
 
         case 'select':
           e.pointInvertSelection(this);
-          d3.event.stopPropagation();
           break;
 
         case 'delete':
+          debug('delete point');
           // exit remove
           break;
 
         case 'move':
+          e.pointInvertSelection(this);
           // drag
           break;
         }
 
-      });
+        d3.event.stopPropagation();
+      }) // circle clicked
 
+      .call(this.drag);
   }
 
 
@@ -119,17 +188,26 @@ e.SketchSVG = class {
   }
 
   brushAdd() {
-    this.$selection.insert("g", ':first-child')
-      .attr("class", "brush")
-      .call(this.brush)
-      .call(this.brush.event);
+    if(d3.selectAll(this.$selection.node().childNodes)
+       .filter('.brush')[0].length === 0) {
+      this.$selection.insert("g", ':first-child')
+        .attr("class", "brush")
+        .call(this.brush)
+        .call(this.brush.event);
+    }
   }
 
 };
 
+// helpers
 e.pointInvertSelection = function(that) {
   const s = d3.select(that);
   s.classed('selected', !s.classed('selected') );
-}
+};
+
+e.getTranslate = function($point) {
+  return { x: d3.transform($point.attr('transform')).translate[0],
+           y: d3.transform($point.attr('transform')).translate[1] };
+};
 
 module.exports = exports = e;
