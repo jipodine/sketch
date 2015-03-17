@@ -11,15 +11,16 @@ e.SketchSVG = class {
     const that = this;
     this.parent = parent;
     this.data = this.parent.data;
+    this.domain = this.parent.domain;
     this.width = width;
     this.height = height;
 
     this.x = d3.scale.linear()
-      .domain(this.data.domain.x)
+      .domain(this.domain.x)
       .range([0, this.width]);
 
     this.y = d3.scale.linear()
-      .domain(this.data.domain.y)
+      .domain(this.domain.y)
       .range([0, this.height]);
 
     this.$selection = this.parent.$selection.append('g')
@@ -77,7 +78,7 @@ e.SketchSVG = class {
         for (let s = 0; s < $moved[0].length; ++ s) {
           const avatar = $moved[0][s].__data__;
           const index = that.data.values.findIndex( (element) => {
-            return element.sameAs(avatar);
+            return data.point.same(element, avatar);
           });
 
           if(index >= 0 && index < that.data.values.length) {
@@ -156,7 +157,7 @@ e.SketchSVG = class {
           for (let s = 0; s < $deleted[0].length; ++ s) {
             const avatar = $deleted[0][s].__data__;
             const index = that.data.values.findIndex( (element) => {
-              return element.sameAs(avatar);
+              return data.point.same(element, avatar);
             });
 
             if(index >= 0 && index < that.data.values.length) {

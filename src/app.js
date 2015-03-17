@@ -7,13 +7,18 @@ app.polyfills = require('./polyfills.js');
 app.sketch = require('./sketch.js');
 app.data = require('./data.js');
 
-const domain = { x: [-10, 10], y: [-5, 5] };
-app.dataSet = new app.data.Set(domain);
+app.domain = { x: [-10, 10], y: [-5, 5] };
+app.structure = new app.data.Structure();
 
-app.dataSet.addRandom(10);
+const set = new app.data.Set({ name: 'random',
+                               domain: app.domain})
+        .addRandom(10);
+app.structure.addSet(set);
 
 app.init = function() {
-  let sketch1 = new app.sketch.Sketch(d3.select('body'), app.dataSet);
+  app.sketch1 = new app.sketch.Sketch({ $parent: d3.select('body'),
+                                        structure: app.structure,
+                                        domain: app.domain });
 }; // init
 
 window.app = app;

@@ -12555,13 +12555,18 @@ app.polyfills = require("./polyfills.js");
 app.sketch = require("./sketch.js");
 app.data = require("./data.js");
 
-var domain = { x: [-10, 10], y: [-5, 5] };
-app.dataSet = new app.data.Set(domain);
+app.domain = { x: [-10, 10], y: [-5, 5] };
+app.structure = new app.data.Structure();
 
-app.dataSet.addRandom(10);
+var set = new app.data.Set({ name: "random",
+  domain: app.domain }).addRandom(10);
+
+app.structure.addSet(set);
 
 app.init = function () {
-  var sketch1 = new app.sketch.Sketch(d3.select("body"), app.dataSet);
+  app.sketch1 = new app.sketch.Sketch({ $parent: d3.select("body"),
+    structure: app.structure,
+    domain: app.domain });
 }; // init
 
 window.app = app;
@@ -12594,44 +12599,53 @@ e.randomName = function () {
   return name;
 };
 
-e.Point = (function () {
-  var _class = function () {
-    var point = arguments[0] === undefined ? {} : arguments[0];
+e.point = {};
+e.point.construct = function () {
+  var point = arguments[0] === undefined ? {} : arguments[0];
 
+  var that = {};
+  that.x = point.x || 0;
+  that.y = point.y || 0;
+  that.name = typeof point.name !== "undefined" ? point.name : e.randomName(3);
+  return that;
+};
+
+e.point.same = function (point1, point2) {
+  return point1.x === point2.x && point1.y === point2.y && point1.name === point2.name;
+};
+
+e.Set = (function () {
+  var _class = function (set) {
     _classCallCheck(this, _class);
 
-    this.x = point.x || 0;
-    this.y = point.y || 0;
-    this.name = typeof point.name !== "undefined" ? point.name : e.randomName(3);
+    this.domain = set && set.domain ? e.jsonClone(set.domain) : { x: [-1, 1], y: [-1, 1] };
+
+    this.values = set && set.values ? e.jsonClone(set.values) : [];
+    this.name = set && set.name ? set.name // immutable
+    : e.randomName(4);
   };
 
   _createClass(_class, {
-    sameAs: {
-      value: function sameAs(point) {
-        return this.x === point.x && this.y === point.y && this.name === point.name;
+    cloneFrom: {
+      value: function cloneFrom(set) {
+        this.domain = e.jsonClone(set.domain);
+        this.values = e.jsonClone(set.values);
+        this.name = set.name; // immutable
+
+        return this;
       }
-    }
-  });
-
-  return _class;
-})();
-
-e.Set = (function () {
-  var _class2 = function () {
-    var domain = arguments[0] === undefined ? { x: [-1, 1], y: [-1, 1] } : arguments[0];
-
-    _classCallCheck(this, _class2);
-
-    this.domain = domain;
-    this.values = [];
-  };
-
-  _createClass(_class2, {
+    },
+    rename: {
+      value: function rename(name) {
+        this.name = name;
+        return this;
+      }
+    },
     addPoint: {
       value: function addPoint() {
         var point = arguments[0] === undefined ? {} : arguments[0];
 
-        this.values.push(new e.Point(point));
+        this.values.push(e.point.construct(point));
         return this;
       }
     },
@@ -12648,8 +12662,64 @@ e.Set = (function () {
     }
   });
 
+  return _class;
+})();
+
+e.Structure = (function () {
+  var _class2 = function () {
+    _classCallCheck(this, _class2);
+
+    this.sets = {};
+  };
+
+  _createClass(_class2, {
+    addSet: {
+      value: function addSet(set) {
+        var _this = this;
+
+        var name = arguments[1] === undefined ? set.name : arguments[1];
+        return (function () {
+          _this.sets[name] = new e.Set(set);
+          return _this;
+        })();
+      }
+    },
+    addSetByReference: {
+      value: function addSetByReference(set) {
+        this.sets[set.name] = set;
+        return this;
+      }
+    },
+    getSetByName: {
+      value: function getSetByName(name) {
+        return this.sets[name];
+      }
+    },
+    removeSetByName: {
+      value: function removeSetByName(name) {
+        delete this.sets[name];
+        return this;
+      }
+    },
+    nameExists: {
+      value: function nameExists(name) {
+        return this.sets.hasOwnProperty(name);
+      }
+    },
+    getSetNames: {
+      value: function getSetNames() {
+        return Object.keys(this.sets);
+      }
+    }
+  });
+
   return _class2;
 })();
+
+// no function here
+e.jsonClone = function (jsonObject) {
+  return JSON.parse(JSON.stringify(jsonObject));
+};
 
 module.exports = exports = e;
 
@@ -12684,34 +12754,65 @@ e.SketchControl = (function () {
 
     _classCallCheck(this, _class);
 
+    var that = this;
     this.parent = parent;
+    this.structure = this.parent.structure;
 
-    this.$selection = this.parent.$selection.append("div").attr("class", "sketch-control").attr("id", parent.id.replace(/.*-/, "sketch-control-"));
+    this.id = this.parent.id.replace(/.*-/, "sketch-control-");
 
-    this.$selection.append("button").attr("class", "sketch-control-element").classed("add", true).text("Add").on("click", function (d, i) {
+    this.$selection = this.parent.$selection.append("div").attr("class", "sketch-control").attr("id", this.id);
+
+    ///// mode
+    this.mode = null;
+    this.$mode = this.$selection.append("div").attr("class", "sketch-control-mode");
+
+    this.$mode.append("button").attr("class", "sketch-control-element").classed("add", true).text("Add").on("click", function () {
       _this.setMode("add");
     });
 
-    this.$selection.append("button").attr("class", "sketch-control-element").classed("select", true).text("Select").on("click", function (d, i) {
+    this.$mode.append("button").attr("class", "sketch-control-element").classed("select", true).text("Select").on("click", function () {
       _this.setMode("select");
     });
 
-    this.$selection.append("button").attr("class", "sketch-control-element").classed("delete", true).text("Delete").on("click", function (d, i) {
+    this.$mode.append("button").attr("class", "sketch-control-element").classed("delete", true).text("Delete").on("click", function () {
       _this.setMode("delete");
     });
 
-    this.$selection.append("button").attr("class", "sketch-control-element").classed("move", true).text("Move").on("click", function (d, i) {
+    this.$mode.append("button").attr("class", "sketch-control-element").classed("move", true).text("Move").on("click", function () {
       _this.setMode("move");
     });
 
     this.setMode("add");
+
+    ///// preset
+
+    this.$preset = this.$selection.append("div").attr("class", "sketch-control-preset").attr("id", parent.id.replace(/.*-/, "sketch-preset-"));
+
+    this.$preset.append("button").attr("class", "sketch-control-element").classed("save", true).text("Save").on("click", function () {
+      _this.savePreset();
+    });
+
+    this.$presetList = this.$preset.append("select").attr("class", "sketch-control-element").on("change", function () {
+      if (d3.event.defaultPrevented) {
+        debug("preset list change prevented");
+        return;
+      }
+      that.loadPreset(_this.$presetList.node().value);
+      d3.event.stopPropagation();
+    });
+
+    this.$preset.append("button").attr("class", "sketch-control-element").classed("delete", true).text("Delete").on("click", function () {
+      _this.deletePreset();
+    });
+
+    this.updatePresetList();
   };
 
   _createClass(_class, {
     setMode: {
       value: function setMode(mode) {
         // exclusive
-        var sisters = d3.selectAll(this.$selection.node().childNodes).classed("selected", false);
+        var sisters = d3.selectAll(this.$mode.node().childNodes).classed("selected", false);
 
         switch (mode) {
           case "add":
@@ -12732,6 +12833,78 @@ e.SketchControl = (function () {
             break;
         }
         this.mode = mode;
+        return this;
+      }
+    },
+    deletePreset: {
+      value: function deletePreset() {
+        var name = window.prompt("Really delete ?", this.parent.data.name);
+        if (name && this.structure.nameExists(name)) {
+          debug("%s deleted", name);
+          this.structure.removeSetByName(name);
+          this.updatePresetList();
+        }
+
+        return this;
+      }
+    },
+    savePreset: {
+      value: function savePreset() {
+        var name = window.prompt("Name", this.parent.data.name);
+        if (name && (!this.structure.nameExists(name) || window.confirm("Update " + name + "?"))) {
+          debug("%s saved", name);
+          this.structure.addSet(this.parent.data, name);
+          this.updatePresetList();
+          this.loadPreset(name);
+        }
+
+        return this;
+      }
+    },
+    loadPreset: {
+      value: function loadPreset(name) {
+        debug("load preset: %s", name);
+        var set = this.structure.getSetByName(name);
+        if (set) {
+          this.parent.data.cloneFrom(set);
+          this.$presetList.node().value = name;
+          this.parent.update();
+        } else {
+          console.log("Unknown preset " + name);
+        }
+
+        return this;
+      }
+    },
+    updatePresetList: {
+      value: function updatePresetList() {
+        var that = this;
+
+        // exit
+        this.$presetList.selectAll("option").data(d3.keys(this.structure.sets)).exit().remove();
+
+        // update
+        this.$presetList.selectAll("option").data(d3.keys(this.structure.sets)).attr("value", function (d) {
+          return d;
+        }).text(function (d) {
+          return d;
+        });
+
+        // enter
+        this.$presetList.selectAll("option").data(d3.keys(this.structure.sets)).enter().append("option").attr("value", function (d) {
+          return d;
+        }).text(function (d) {
+          return d;
+        }).on("click", function (d) {
+          if (d3.event.defaultPrevented) {
+            debug("preset list click prevented");
+            return;
+          }
+
+          that.loadPreset(d);
+          d3.event.stopPropagation();
+        });
+
         return this;
       }
     },
@@ -12784,12 +12957,13 @@ e.SketchSVG = (function () {
     var that = this;
     this.parent = parent;
     this.data = this.parent.data;
+    this.domain = this.parent.domain;
     this.width = width;
     this.height = height;
 
-    this.x = d3.scale.linear().domain(this.data.domain.x).range([0, this.width]);
+    this.x = d3.scale.linear().domain(this.domain.x).range([0, this.width]);
 
-    this.y = d3.scale.linear().domain(this.data.domain.y).range([0, this.height]);
+    this.y = d3.scale.linear().domain(this.domain.y).range([0, this.height]);
 
     this.$selection = this.parent.$selection.append("g").attr("transform", "translate(0,0)") // margins
     .append("svg").attr("class", "sketch-svg").attr("id", this.parent.id.replace(/.*-/, "sketch-svg-")).attr("width", this.width).attr("height", this.height) // .attr("pointer-events", "all")
@@ -12846,7 +13020,7 @@ e.SketchSVG = (function () {
         (function (s) {
           var avatar = $moved[0][s].__data__;
           var index = that.data.values.findIndex(function (element) {
-            return element.sameAs(avatar);
+            return data.point.same(element, avatar);
           });
 
           if (index >= 0 && index < that.data.values.length) {
@@ -12922,7 +13096,7 @@ e.SketchSVG = (function () {
                 (function (s) {
                   var avatar = $deleted[0][s].__data__;
                   var index = that.data.values.findIndex(function (element) {
-                    return element.sameAs(avatar);
+                    return data.point.same(element, avatar);
                   });
 
                   if (index >= 0 && index < that.data.values.length) {
@@ -13015,18 +13189,21 @@ module.exports = exports = e;
 },{"./data.js":11,"./sketch.js":15,"d3":6,"debug":7}],15:[function(require,module,exports){
 "use strict";
 
+var _createClass = (function () { function defineProperties(target, props) { for (var key in props) { var prop = props[key]; prop.configurable = true; if (prop.value) prop.writable = true; } Object.defineProperties(target, props); } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
+
 var _classCallCheck = function (instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } };
 
 var d3 = require("d3");
 var debug = require("debug")("sketch:sketch");
 
+var data = require("./data.js");
 var control = require("./sketch-control.js");
 var svg = require("./sketch-svg.js");
 
 var e = {};
 
 e.Sketch = (function () {
-  var _class = function ($parent, data) {
+  var _class = function (params) {
     _classCallCheck(this, _class);
 
     // class
@@ -13034,22 +13211,32 @@ e.Sketch = (function () {
     ++e.Sketch.count;
 
     // object
-    this.$parent = $parent;
-    this.data = data;
+    this.$parent = params.$parent;
+    this.structure = params.structure;
+    this.domain = params.domain;
+    this.data = new data.Set();
     this.id = "sketch-" + e.Sketch.count;
-    this.$selection = $parent.append("div").attr("class", "sketch").attr("id", this.id);
+    this.$selection = this.$parent.append("div").attr("class", "sketch").attr("id", this.id);
 
     this.control = new control.SketchControl(this);
 
     var svgWidth = this.$selection.node().clientWidth;
-    var svgHeight = Math.floor(svgWidth * (data.domain.y[1] - data.domain.y[0]) / (data.domain.x[1] - data.domain.x[0]));
+    var svgHeight = Math.floor(svgWidth * (this.domain.y[1] - this.domain.y[0]) / (this.domain.x[1] - this.domain.x[0]));
 
     this.svg = new svg.SketchSVG(this, svgWidth, svgHeight);
   };
+
+  _createClass(_class, {
+    update: {
+      value: function update() {
+        this.svg.update();
+      }
+    }
+  });
 
   return _class;
 })();
 
 module.exports = exports = e;
 
-},{"./sketch-control.js":13,"./sketch-svg.js":14,"d3":6,"debug":7}]},{},[10]);
+},{"./data.js":11,"./sketch-control.js":13,"./sketch-svg.js":14,"d3":6,"debug":7}]},{},[10]);
