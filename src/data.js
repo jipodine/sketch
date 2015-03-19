@@ -41,6 +41,7 @@ e.Set = class {
     this.name = (set && set.name
                  ? set.name // immutable
                  : e.randomName(4) );
+    return this;
   }
 
   cloneFrom(set) {
@@ -75,8 +76,8 @@ e.Set = class {
 
 
 e.Structure = class {
-  constructor() {
-    this.sets = {};
+  constructor(sets = {}) {
+    this.sets = sets;
   }
 
   addSet(set, name = set.name) {

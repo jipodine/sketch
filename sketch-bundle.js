@@ -12544,6 +12544,130 @@ function plural(ms, n, name) {
 }
 
 },{}],10:[function(require,module,exports){
+module.exports={
+  "name": "sketch",
+  "version": "0.0.5",
+  "description": "",
+  "main": "sketch-main.js",
+  "scripts": {
+    "start": "open index.html",
+    "bundle": "browserify src/app.js -t babelify --outfile sketch-bundle.js"
+  },
+  "author": "jipodine",
+  "license": "(o)",
+  "dependencies": {
+    "debug": "^2.1.2"
+  },
+  "devDdependencies": {
+    "babelify": "^5.0.4",
+    "browserify": "^9.0.3",
+    "d3": "^3.5.5"
+  }
+}
+
+},{}],11:[function(require,module,exports){
+"use strict";
+
+var _createClass = (function () { function defineProperties(target, props) { for (var key in props) { var prop = props[key]; prop.configurable = true; if (prop.value) prop.writable = true; } Object.defineProperties(target, props); } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
+
+var _classCallCheck = function (instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } };
+
+var debug = require("debug")("sketch:app");
+var d3 = require("d3");
+
+var pjson = require("../package.json");
+
+var data = require("./data.js");
+
+var e = {};
+
+e.AppControl = (function () {
+  var _class = function (parent) {
+    var _this = this;
+
+    var id = arguments[1] === undefined ? "app-control-" + e.randomName(5) : arguments[1];
+
+    _classCallCheck(this, _class);
+
+    this.parent = parent;
+    this.structure = parent.structure;
+    this.id = id;
+
+    this.$selection = this.parent.$selection.append("div").attr("class", "app-control").attr("id", this.id);
+
+    this.$export = this.$selection.append("button").attr("class", "app-control-element").classed("export", true).text("Export").on("click", function () {
+      _this.exportToFile();
+    });
+
+    this.$exportLink = this.$export.append("a").style("display", "none");
+
+    this.$import = this.$selection.append("button").attr("class", "app-control-element").classed("import", true).text("Import").on("click", function () {
+      _this.$importFile.node().click();
+    });
+
+    this.$importFile = this.$selection.append("input").attr("type", "file").attr("accept", "application/json").style("display", "none").on("change", function () {
+      _this.importFromFile();
+    });
+  };
+
+  _createClass(_class, {
+    exportToFile: {
+      value: function exportToFile() {
+        var x = {};
+        x[pjson.name + ".version"] = pjson.version;
+        x.structure = data.jsonClone(this.parent.structure);
+
+        var blob = new Blob([JSON.stringify(x)], { type: "application/json" });
+        var url = window.URL.createObjectURL(blob);
+
+        var d = new Date();
+        var name = (pjson.name + "_" + d.toLocaleString()).replace(/[:/.]/g, "-").replace(/ /g, "_") + ".json";
+        this.$exportLink.attr("href", url).attr("download", name);
+        this.$exportLink.node().click();
+
+        return this;
+      }
+    },
+    importFromFile: {
+      value: function importFromFile() {
+        var _this = this;
+
+        debug("import");
+        var file = this.$importFile.node().files[0];
+        if (file) {
+          (function () {
+            var reader = new FileReader();
+            reader.onload = function () {
+              //TODO: handle version
+              var i = JSON.parse(reader.result);
+              var sets = i.structure.sets;
+              for (var k in sets) {
+                if (sets.hasOwnProperty(k)) {
+                  _this.parent.structure.addSet(sets[k]);
+                }
+              }
+              _this.update();
+            };
+            reader.readAsText(file);
+          })();
+        }
+
+        return this;
+      }
+    },
+    update: {
+      value: function update() {
+        this.parent.update();
+      }
+    }
+  });
+
+  return _class;
+})();
+
+module.exports = exports = e;
+
+},{"../package.json":10,"./data.js":13,"d3":6,"debug":7}],12:[function(require,module,exports){
 "use strict";
 
 var debug = require("debug")("sketch:app");
@@ -12552,21 +12676,29 @@ var d3 = require("d3");
 var app = window.app || {};
 
 app.polyfills = require("./polyfills.js");
-app.sketch = require("./sketch.js");
+app.control = require("./app-control.js");
 app.data = require("./data.js");
+app.sketch = require("./sketch.js");
 
 app.domain = { x: [-10, 10], y: [-5, 5] };
 app.structure = new app.data.Structure();
 
-var set = new app.data.Set({ name: "random",
-  domain: app.domain }).addRandom(10);
+var set = new app.data.Set({ name: "random", domain: app.domain }).addRandom(10);
 
 app.structure.addSet(set);
 
 app.init = function () {
+  app.$selection = d3.select("body");
+  app.control1 = new app.control.AppControl(app, "app-control-1");
+
   app.sketch1 = new app.sketch.Sketch({ $parent: d3.select("body"),
     structure: app.structure,
     domain: app.domain });
+
+  app.update = function () {
+    // loop    app.control1.update();
+    app.sketch1.update();
+  };
 }; // init
 
 window.app = app;
@@ -12575,7 +12707,7 @@ window.addEventListener("DOMContentLoaded", function () {
   app.init();
 });
 
-},{"./data.js":11,"./polyfills.js":12,"./sketch.js":15,"d3":6,"debug":7}],11:[function(require,module,exports){
+},{"./app-control.js":11,"./data.js":13,"./polyfills.js":14,"./sketch.js":17,"d3":6,"debug":7}],13:[function(require,module,exports){
 "use strict";
 
 var _createClass = (function () { function defineProperties(target, props) { for (var key in props) { var prop = props[key]; prop.configurable = true; if (prop.value) prop.writable = true; } Object.defineProperties(target, props); } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
@@ -12623,6 +12755,7 @@ e.Set = (function () {
     this.values = set && set.values ? e.jsonClone(set.values) : [];
     this.name = set && set.name ? set.name // immutable
     : e.randomName(4);
+    return this;
   };
 
   _createClass(_class, {
@@ -12667,9 +12800,11 @@ e.Set = (function () {
 
 e.Structure = (function () {
   var _class2 = function () {
+    var sets = arguments[0] === undefined ? {} : arguments[0];
+
     _classCallCheck(this, _class2);
 
-    this.sets = {};
+    this.sets = sets;
   };
 
   _createClass(_class2, {
@@ -12723,7 +12858,7 @@ e.jsonClone = function (jsonObject) {
 
 module.exports = exports = e;
 
-},{}],12:[function(require,module,exports){
+},{}],14:[function(require,module,exports){
 "use strict";
 
 var e = {};
@@ -12734,7 +12869,7 @@ if (typeof Array.prototype.findIndex === "undefined") {
 
 module.exports = exports = e;
 
-},{"babelify/polyfill":5}],13:[function(require,module,exports){
+},{"babelify/polyfill":5}],15:[function(require,module,exports){
 "use strict";
 
 var _createClass = (function () { function defineProperties(target, props) { for (var key in props) { var prop = props[key]; prop.configurable = true; if (prop.value) prop.writable = true; } Object.defineProperties(target, props); } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
@@ -12876,6 +13011,12 @@ e.SketchControl = (function () {
         return this;
       }
     },
+    update: {
+      value: function update() {
+        this.updatePresetList();
+        return this;
+      }
+    },
     updatePresetList: {
       value: function updatePresetList() {
         var that = this;
@@ -12931,7 +13072,7 @@ e.SketchControl = (function () {
 
 module.exports = exports = e;
 
-},{"./sketch.js":15,"d3":6,"debug":7}],14:[function(require,module,exports){
+},{"./sketch.js":17,"d3":6,"debug":7}],16:[function(require,module,exports){
 "use strict";
 
 var _slicedToArray = function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { var _arr = []; for (var _iterator = arr[Symbol.iterator](), _step; !(_step = _iterator.next()).done;) { _arr.push(_step.value); if (i && _arr.length === i) break; } return _arr; } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } };
@@ -13186,7 +13327,7 @@ e.getTranslate = function ($point) {
 
 module.exports = exports = e;
 
-},{"./data.js":11,"./sketch.js":15,"d3":6,"debug":7}],15:[function(require,module,exports){
+},{"./data.js":13,"./sketch.js":17,"d3":6,"debug":7}],17:[function(require,module,exports){
 "use strict";
 
 var _createClass = (function () { function defineProperties(target, props) { for (var key in props) { var prop = props[key]; prop.configurable = true; if (prop.value) prop.writable = true; } Object.defineProperties(target, props); } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
@@ -13204,6 +13345,8 @@ var e = {};
 
 e.Sketch = (function () {
   var _class = function (params) {
+    var _this = this;
+
     _classCallCheck(this, _class);
 
     // class
@@ -13216,7 +13359,9 @@ e.Sketch = (function () {
     this.domain = params.domain;
     this.data = new data.Set();
     this.id = "sketch-" + e.Sketch.count;
-    this.$selection = this.$parent.append("div").attr("class", "sketch").attr("id", this.id);
+    this.$selection = this.$parent.append("div").attr("class", "sketch").attr("id", this.id).on("changed", function () {
+      _this.update();
+    });
 
     this.control = new control.SketchControl(this);
 
@@ -13229,7 +13374,11 @@ e.Sketch = (function () {
   _createClass(_class, {
     update: {
       value: function update() {
+        debug("sketch " + this.id + " updated");
+        this.control.update();
         this.svg.update();
+
+        return this;
       }
     }
   });
@@ -13239,4 +13388,4 @@ e.Sketch = (function () {
 
 module.exports = exports = e;
 
-},{"./data.js":11,"./sketch-control.js":13,"./sketch-svg.js":14,"d3":6,"debug":7}]},{},[10]);
+},{"./data.js":13,"./sketch-control.js":15,"./sketch-svg.js":16,"d3":6,"debug":7}]},{},[12]);

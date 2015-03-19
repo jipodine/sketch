@@ -6,5 +6,6 @@
   "laxcomma": true,
   "laxbreak": true,
   "node": true,
-  "browser": true
+  "browser": true,
+  "predef": [ "JSON" ]
 }

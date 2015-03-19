@@ -34,7 +34,11 @@ e.Sketch = class {
   }
 
   update() {
+    debug('sketch ' + this.id + ' updated');
+    this.control.update();
     this.svg.update();
+
+    return this;
   }
 
 };

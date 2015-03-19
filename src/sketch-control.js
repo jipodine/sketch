@@ -146,6 +146,11 @@ e.SketchControl = class {
     return this;
   }
 
+  update() {
+    this.updatePresetList();
+    return this;
+  }
+
   updatePresetList() {
     const that = this;
 

@@ -4,6 +4,18 @@ body {
     position: relative;
 }
 
+.app-control {
+    display: inline-block;
+    float: right;
+}
+
+.app-control-element {
+    display: inline-block;
+    float: right;
+    margin: 10px;
+    border: 10px;
+}
+
 .sketch {
     margin: 0;
 }
@@ -15,12 +27,10 @@ body {
 
 .sketch-control-mode {
     float: left;
-/*    margin: 0; */
 }
 
 .sketch-control-preset {
     float: right;
-    margin: 0;
 }
 
 .sketch-control-element {
