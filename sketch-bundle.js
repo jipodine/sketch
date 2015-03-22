@@ -12738,12 +12738,13 @@ e.point.construct = function () {
   var that = {};
   that.x = point.x || 0;
   that.y = point.y || 0;
+  that.Id = point.Id || 0;
   that.name = typeof point.name !== "undefined" ? point.name : e.randomName(3);
   return that;
 };
 
 e.point.same = function (point1, point2) {
-  return point1.x === point2.x && point1.y === point2.y && point1.name === point2.name;
+  return point1.x === point2.x && point1.y === point2.y && point1.Id === point2.Id;
 };
 
 e.Set = (function () {
@@ -12778,7 +12779,18 @@ e.Set = (function () {
       value: function addPoint() {
         var point = arguments[0] === undefined ? {} : arguments[0];
 
-        this.values.push(e.point.construct(point));
+        point.Id = this.values.length;
+        this.values[point.Id] = e.point.construct(point);
+        return this;
+      }
+    },
+    insertPoint: {
+      value: function insertPoint() {
+        var point = arguments[0] === undefined ? {} : arguments[0];
+        var Id = arguments[1] === undefined ? 0 : arguments[1];
+
+        point.Id = this.values.length;
+        this.values.splice(point.ID, 0, e.point.construct(point));
         return this;
       }
     },
@@ -13136,17 +13148,25 @@ e.SketchSVG = (function () {
 
     this.drag = d3.behavior.drag().origin(function (d) {
       var $origin = d3.select(this);
-      var translate = e.getTranslate($origin);
-      return { x: $origin.attr("x") + translate.x,
-        y: $origin.attr("y") + translate.y };
+      return { x: that.x(d.x),
+        y: that.y(d.y) };
     }) // origin
     .on("drag.svg", function (d, i) {
+      if (d3.event.defaultPrevented) {
+        debug("svg click prevented");
+        return;
+      }
+
       var $move = d3.select(this);
       if ($move.classed("selected")) {
         $move = e.sistersSelectedSelection($move);
       }
 
-      $move.attr("transform", "translate(" + d3.event.x + "," + d3.event.y + ")");
+      var translate = { x: d3.event.x - that.x(d.x),
+        y: d3.event.y - that.y(d.y) };
+      $move.attr("transform", function (d) {
+        return "translate(" + (that.x(d.x) + translate.x) + "," + (that.y(d.y) + translate.y) + ")";
+      });
 
       d3.event.sourceEvent.stopPropagation();
     }) // drag
@@ -13166,9 +13186,9 @@ e.SketchSVG = (function () {
 
           if (index >= 0 && index < that.data.values.length) {
             var original = that.data.values[index];
-            var translate = e.getTranslate($moved);
-            original.x = that.x.invert(that.x(original.x) + translate.x);
-            original.y = that.y.invert(that.y(original.y) + translate.y);
+            var translate = d3.transform(d3.select($moved[0][s]).attr("transform")).translate;
+            original.x = that.x.invert(translate[0]);
+            original.y = that.y.invert(translate[1]);
             updated = true;
           }
         })(s);
@@ -13188,29 +13208,18 @@ e.SketchSVG = (function () {
         var _this = this;
 
         var that = this;
-        // exit
-        this.$selection.selectAll(".point").data(this.data.values).exit().remove();
 
         // update
-        this.$selection.selectAll(".point").data(this.data.values).attr("cx", function (d) {
-          return _this.x(d.x);
-        }).attr("cy", function (d) {
-          return _this.y(d.y);
-        }).attr("transform", function (d, i) {
-          var $point = d3.select(this);
-          if ($point.attr("transform")) {
-            $point.attr("transform", $point.attr("transform").replace(/translate\([+-]?[0-9]+\,[+-]?[0-9]+\)/, ""));
-          }
-          return $point.attr("transform") || null;
+        var $updated = this.$selection.selectAll(".point").data(this.data.values).attr("transform", function (d) {
+          return "translate(" + _this.x(d.x) + "," + _this.y(d.y) + ")";
         });
 
+        // exit
+        $updated.exit().remove();
+
         // enter
-        this.$selection.selectAll(".point").data(this.data.values).enter().append("circle").attr("class", "point").attr("cx", function (d) {
-          return _this.x(d.x);
-        }).attr("cy", function (d) {
-          return _this.y(d.y);
-        }).attr("r", 7).attr("name", function (d) {
-          return d.name;
+        $updated.enter().append("g").attr("class", "point").attr("transform", function (d) {
+          return "translate(" + _this.x(d.x) + "," + _this.y(d.y) + ")";
         }).on("click", function (d, i) {
           if (d3.event.defaultPrevented) {
             debug("svg click prevented");
@@ -13256,14 +13265,26 @@ e.SketchSVG = (function () {
 
             case "move":
               e.invertSelection(d3.select(this));
-              // drag
               break;
           }
 
           d3.event.stopPropagation();
         }) // circle clicked
 
-        .call(this.drag);
+        .call(this.drag).each(function (d, i, e) {
+          debug("added %s, %, %s", d, i, e);
+
+          var $point = d3.select(this);
+
+          $point.append("circle").attr("cx", 0).attr("cy", 0).attr("r", function (d) {
+            // font-size must be a style attribute of point
+            return parseInt(d3.select(".point").style("font-size"), 10);
+          });
+
+          $point.append("text").attr("class", "label").text(function (d) {
+            return (d.Id + 1).toString();
+          }).attr("dy", "0.3333333333333333em");
+        });
       }
     },
     brushed: {
@@ -13320,11 +13341,6 @@ e.sistersSelectedSelection = function ($point) {
   return d3.selectAll($point.node().parentNode.childNodes).filter(".selected");
 };
 
-e.getTranslate = function ($point) {
-  return { x: d3.transform($point.attr("transform")).translate[0],
-    y: d3.transform($point.attr("transform")).translate[1] };
-};
-
 module.exports = exports = e;
 
 },{"./data.js":13,"./sketch.js":17,"d3":6,"debug":7}],17:[function(require,module,exports){
@@ -13345,8 +13361,6 @@ var e = {};
 
 e.Sketch = (function () {
   var _class = function (params) {
-    var _this = this;
-
     _classCallCheck(this, _class);
 
     // class
@@ -13359,9 +13373,7 @@ e.Sketch = (function () {
     this.domain = params.domain;
     this.data = new data.Set();
     this.id = "sketch-" + e.Sketch.count;
-    this.$selection = this.$parent.append("div").attr("class", "sketch").attr("id", this.id).on("changed", function () {
-      _this.update();
-    });
+    this.$selection = this.$parent.append("div").attr("class", "sketch").attr("id", this.id);
 
     this.control = new control.SketchControl(this);
 

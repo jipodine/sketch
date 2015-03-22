@@ -46,14 +46,22 @@ body {
 }
 
 .point {
-    fill: #999;
+    text-anchor: middle;
+    font-size: large;
+    cursor: pointer;
+    fill: #ddd;
     stroke: #fff;
 }
 
+.point > text {
+    fill: #000;
+    stroke: #111;
+}
+
 .point.selected {
-    fill: red;
+    fill: #faa;
     fill-opacity: 1;
-    stroke: brown;
+    stroke: #a22;
 }
 
 

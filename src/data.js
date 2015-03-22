@@ -18,6 +18,7 @@ e.point.construct = function (point = {}) {
   let that = {};
   that.x = point.x || 0;
   that.y = point.y || 0;
+  that.Id = point.Id || 0;
   that.name = (typeof point.name !== 'undefined'
                ? point.name : e.randomName(3) );
   return that;
@@ -26,7 +27,7 @@ e.point.construct = function (point = {}) {
 e.point.same = function(point1, point2) {
   return point1.x === point2.x
     && point1.y === point2.y
-    && point1.name === point2.name;
+    && point1.Id === point2.Id;
 };
 
 e.Set = class {
@@ -58,7 +59,14 @@ e.Set = class {
   }
 
   addPoint(point = {}) {
-    this.values.push(e.point.construct(point));
+    point.Id = this.values.length;
+    this.values[point.Id] = e.point.construct(point);
+    return this;
+  }
+
+  insertPoint(point = {}, Id = 0) {
+    point.Id = this.values.length;
+    this.values.splice(point.ID, 0, e.point.construct(point) );
     return this;
   }
 

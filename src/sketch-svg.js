@@ -53,18 +53,26 @@ e.SketchSVG = class {
     this.drag = d3.behavior.drag()
       .origin(function(d) {
         const $origin = d3.select(this);
-        const translate = e.getTranslate($origin);
-        return { x: $origin.attr('x') + translate.x,
-                 y: $origin.attr('y') + translate.y };
+        return { x: that.x(d.x),
+                 y: that.y(d.y) };
       }) // origin
       .on('drag.svg', function (d,i) {
+        if(d3.event.defaultPrevented) {
+          debug('svg click prevented');
+          return;
+        }
+
         let $move = d3.select(this);
         if($move.classed('selected') ) {
           $move = e.sistersSelectedSelection($move);
         }
 
-        $move.attr('transform', 'translate('
-                   + d3.event.x + ',' + d3.event.y + ')' );
+        const translate = { x: d3.event.x - that.x(d.x),
+                            y: d3.event.y - that.y(d.y) };
+        $move.attr('transform', function (d) {
+          return 'translate(' + (that.x(d.x) + translate.x) + ','
+            + (that.y(d.y) + translate.y) + ')';
+        });
 
         d3.event.sourceEvent.stopPropagation();
       }) // drag
@@ -76,18 +84,17 @@ e.SketchSVG = class {
 
         let updated = false;
         for (let s = 0; s < $moved[0].length; ++ s) {
-          const avatar = $moved[0][s].__data__;
+          let avatar = $moved[0][s].__data__;
           const index = that.data.values.findIndex( (element) => {
             return data.point.same(element, avatar);
           });
 
           if(index >= 0 && index < that.data.values.length) {
             let original = that.data.values[index];
-            const translate = e.getTranslate($moved);
-            original.x =
-              that.x.invert(that.x(original.x) + translate.x);
-            original.y =
-              that.y.invert(that.y(original.y) + translate.y);
+            const translate =  d3.transform(d3.select($moved[0][s])
+                                            .attr('transform')).translate;
+            original.x = that.x.invert(translate[0]);
+            original.y = that.y.invert(translate[1]);
             updated = true;
           }
         } // each point of the selection
@@ -103,35 +110,26 @@ e.SketchSVG = class {
 
   update() {
     const that = this;
+
+    // update
+    const $updated = this.$selection.selectAll(".point")
+            .data(this.data.values)
+            .attr('transform', (d) => {
+              return "translate(" + this.x(d.x) + "," + this.y(d.y) + ")";
+            });
+
     // exit
-    this.$selection.selectAll(".point")
-      .data(this.data.values)
+    $updated
       .exit()
       .remove();
 
-    // update
-    this.$selection.selectAll(".point")
-      .data(this.data.values)
-      .attr("cx", (d) => { return this.x(d.x); })
-      .attr("cy", (d) => { return this.y(d.y); })
-      .attr('transform', function (d, i) {
-        let $point = d3.select(this);
-        if($point.attr('transform') ) {
-          $point.attr("transform", $point.attr("transform")
-                      .replace(/translate\([+-]?[0-9]+\,[+-]?[0-9]+\)/,'') );
-        }
-        return $point.attr('transform') || null;
-      });
-
     // enter
-    this.$selection.selectAll(".point")
-      .data(this.data.values)
-      .enter().append("circle")
+    $updated
+      .enter().append('g')
       .attr("class", "point")
-      .attr("cx", (d) => { return this.x(d.x); })
-      .attr("cy", (d) => { return this.y(d.y); })
-      .attr("r", 7)
-      .attr("name", (d) => { return d.name; })
+      .attr('transform', (d) => {
+        return "translate(" + this.x(d.x) + "," + this.y(d.y) + ")";
+      })
       .on('click', function (d, i) {
         if(d3.event.defaultPrevented) {
           debug('svg click prevented');
@@ -175,16 +173,34 @@ e.SketchSVG = class {
 
         case 'move':
           e.invertSelection(d3.select(this));
-          // drag
           break;
         }
 
         d3.event.stopPropagation();
       }) // circle clicked
 
-      .call(this.drag);
-  }
+      .call(this.drag)
 
+      .each( function (d, i, e) {
+        debug('added %s, %, %s', d, i, e);
+
+        const $point = d3.select(this);
+
+        $point.append("circle")
+          .attr("cx", 0)
+          .attr("cy", 0)
+          .attr('r', function (d) {
+            // font-size must be a style attribute of point
+            return parseInt(d3.select('.point').style('font-size'), 10);
+          });
+
+        $point.append('text')
+          .attr('class', 'label')
+          .text( function (d) { return (d.Id + 1).toString(); })
+          .attr('dy', '0.3333333333333333em');
+      });
+
+  }
 
   brushed() {
     const $point = this.$selection.selectAll(".point");
@@ -236,11 +252,6 @@ e.invertSelection = function($point) {
 e.sistersSelectedSelection = function($point) {
   return d3.selectAll($point.node().parentNode.childNodes)
     .filter('.selected');
-};
-
-e.getTranslate = function($point) {
-  return { x: d3.transform($point.attr('transform')).translate[0],
-           y: d3.transform($point.attr('transform')).translate[1] };
 };
 
 module.exports = exports = e;
