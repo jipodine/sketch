@@ -90,6 +90,7 @@ e.Structure = class {
 
   addSet(set, name = set.name) {
     this.sets[name] = new e.Set(set);
+    this.sets[name].name = name;
     return this;
   }
 
