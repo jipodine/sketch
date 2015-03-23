@@ -1,3 +1,5 @@
+'use strict';
+
 const debug = require('debug')('sketch:app');
 const d3 = require('d3');
 
@@ -7,6 +9,7 @@ app.polyfills = require('./polyfills.js');
 app.control = require('./app-control.js');
 app.data = require('./data.js');
 app.sketch = require('./sketch.js');
+app.transition = require('./transition.js');
 
 app.domain = { x: [-10, 10], y: [-5, 5] };
 app.structure = new app.data.Structure();
@@ -24,9 +27,21 @@ app.$selection = d3.select('body');
                                         structure: app.structure,
                                         domain: app.domain });
 
+  app.sketch2 = new app.sketch.Sketch({ $parent: d3.select('body'),
+                                        structure: app.structure,
+                                        domain: app.domain });
+  app.transition12 = new app.transition.Transition(
+    { $parent: d3.select('body'),
+      structure: app.structure,
+      domain: app.domain,
+      start: app.sketch1,
+      end: app.sketch2 });
+
+
   app.update = function () {
 // loop    app.control1.update();
     app.sketch1.update();
+    app.sketch2.update();
   };
 
 

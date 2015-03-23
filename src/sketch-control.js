@@ -1,7 +1,7 @@
+'use strict';
+
 const d3 = require('d3');
 const debug = require('debug')('sketch:control');
-
-const sketch = require('./sketch.js');
 
 let e = {};
 
@@ -11,7 +11,7 @@ e.SketchControl = class {
     this.parent = parent;
     this.structure = this.parent.structure;
 
-    this.id = this.parent.id.replace(/.*-/,'sketch-control-');
+    this.id = this.parent.id.replace(/.*-/, 'sketch-control-');
 
     this.$selection = this.parent.$selection.append('div')
       .attr('class', 'sketch-control')
@@ -52,7 +52,7 @@ e.SketchControl = class {
 
     this.$preset = this.$selection.append('div')
       .attr('class', 'sketch-control-preset')
-      .attr('id', parent.id.replace(/.*-/,'sketch-preset-'));
+      .attr('id', parent.id.replace(/.*-/, 'sketch-preset-'));
 
     this.$preset.append('button')
       .attr('class', 'sketch-control-element')
@@ -121,7 +121,7 @@ e.SketchControl = class {
   savePreset() {
     const name = window.prompt('Name', this.parent.data.name);
     if(name
-       && (! this.structure.nameExists(name)
+       && (!this.structure.nameExists(name)
            || window.confirm('Update ' + name + '?') ) ) {
       debug('%s saved', name);
       this.structure.addSet(this.parent.data, name);

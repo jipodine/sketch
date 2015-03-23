@@ -12573,7 +12573,6 @@ var _createClass = (function () { function defineProperties(target, props) { for
 var _classCallCheck = function (instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } };
 
 var debug = require("debug")("sketch:app");
-var d3 = require("d3");
 
 var pjson = require("../package.json");
 
@@ -12667,7 +12666,7 @@ e.AppControl = (function () {
 
 module.exports = exports = e;
 
-},{"../package.json":10,"./data.js":13,"d3":6,"debug":7}],12:[function(require,module,exports){
+},{"../package.json":10,"./data.js":13,"debug":7}],12:[function(require,module,exports){
 "use strict";
 
 var debug = require("debug")("sketch:app");
@@ -12679,6 +12678,7 @@ app.polyfills = require("./polyfills.js");
 app.control = require("./app-control.js");
 app.data = require("./data.js");
 app.sketch = require("./sketch.js");
+app.transition = require("./transition.js");
 
 app.domain = { x: [-10, 10], y: [-5, 5] };
 app.structure = new app.data.Structure();
@@ -12695,9 +12695,19 @@ app.init = function () {
     structure: app.structure,
     domain: app.domain });
 
+  app.sketch2 = new app.sketch.Sketch({ $parent: d3.select("body"),
+    structure: app.structure,
+    domain: app.domain });
+  app.transition12 = new app.transition.Transition({ $parent: d3.select("body"),
+    structure: app.structure,
+    domain: app.domain,
+    start: app.sketch1,
+    end: app.sketch2 });
+
   app.update = function () {
     // loop    app.control1.update();
     app.sketch1.update();
+    app.sketch2.update();
   };
 }; // init
 
@@ -12707,7 +12717,7 @@ window.addEventListener("DOMContentLoaded", function () {
   app.init();
 });
 
-},{"./app-control.js":11,"./data.js":13,"./polyfills.js":14,"./sketch.js":17,"d3":6,"debug":7}],13:[function(require,module,exports){
+},{"./app-control.js":11,"./data.js":13,"./polyfills.js":14,"./sketch.js":17,"./transition.js":20,"d3":6,"debug":7}],13:[function(require,module,exports){
 "use strict";
 
 var _createClass = (function () { function defineProperties(target, props) { for (var key in props) { var prop = props[key]; prop.configurable = true; if (prop.value) prop.writable = true; } Object.defineProperties(target, props); } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
@@ -12789,8 +12799,8 @@ e.Set = (function () {
         var point = arguments[0] === undefined ? {} : arguments[0];
         var Id = arguments[1] === undefined ? 0 : arguments[1];
 
-        point.Id = this.values.length;
-        this.values.splice(point.ID, 0, e.point.construct(point));
+        point.Id = Id || this.values.length;
+        this.values.splice(point.Id, 0, e.point.construct(point));
         return this;
       }
     },
@@ -12827,6 +12837,7 @@ e.Structure = (function () {
         var name = arguments[1] === undefined ? set.name : arguments[1];
         return (function () {
           _this.sets[name] = new e.Set(set);
+          _this.sets[name].name = name;
           return _this;
         })();
       }
@@ -12890,8 +12901,6 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 
 var d3 = require("d3");
 var debug = require("debug")("sketch:control");
-
-var sketch = require("./sketch.js");
 
 var e = {};
 
@@ -13084,7 +13093,7 @@ e.SketchControl = (function () {
 
 module.exports = exports = e;
 
-},{"./sketch.js":17,"d3":6,"debug":7}],16:[function(require,module,exports){
+},{"d3":6,"debug":7}],16:[function(require,module,exports){
 "use strict";
 
 var _slicedToArray = function (arr, i) { if (Array.isArray(arr)) { return arr; } else if (Symbol.iterator in Object(arr)) { var _arr = []; for (var _iterator = arr[Symbol.iterator](), _step; !(_step = _iterator.next()).done;) { _arr.push(_step.value); if (i && _arr.length === i) break; } return _arr; } else { throw new TypeError("Invalid attempt to destructure non-iterable instance"); } };
@@ -13096,7 +13105,6 @@ var _classCallCheck = function (instance, Constructor) { if (!(instance instance
 var d3 = require("d3");
 var debug = require("debug")("sketch:svg");
 
-var sketch = require("./sketch.js");
 var data = require("./data.js");
 
 var e = {};
@@ -13119,8 +13127,8 @@ e.SketchSVG = (function () {
     this.y = d3.scale.linear().domain(this.domain.y).range([0, this.height]);
 
     this.$selection = this.parent.$selection.append("g").attr("transform", "translate(0,0)") // margins
-    .append("svg").attr("class", "sketch-svg").attr("id", this.parent.id.replace(/.*-/, "sketch-svg-")).attr("width", this.width).attr("height", this.height) // .attr("pointer-events", "all")
-    .on("click.svg", function (d, i) {
+    .append("svg").attr("class", "sketch-svg").attr("id", this.parent.id.replace(/.*-/, "sketch-svg-")).attr("width", this.width).attr("height", this.height) // .attr('pointer-events', 'all')
+    .on("click.svg", function () {
       if (d3.event.defaultPrevented) {
         debug("svg click prevented");
         return;
@@ -13147,11 +13155,10 @@ e.SketchSVG = (function () {
     });
 
     this.drag = d3.behavior.drag().origin(function (d) {
-      var $origin = d3.select(this);
       return { x: that.x(d.x),
         y: that.y(d.y) };
     }) // origin
-    .on("drag.svg", function (d, i) {
+    .on("drag.svg", function (d) {
       if (d3.event.defaultPrevented) {
         debug("svg click prevented");
         return;
@@ -13164,13 +13171,13 @@ e.SketchSVG = (function () {
 
       var translate = { x: d3.event.x - that.x(d.x),
         y: d3.event.y - that.y(d.y) };
-      $move.attr("transform", function (d) {
-        return "translate(" + (that.x(d.x) + translate.x) + "," + (that.y(d.y) + translate.y) + ")";
+      $move.attr("transform", function (d2) {
+        return "translate(" + (that.x(d2.x) + translate.x) + "," + (that.y(d2.y) + translate.y) + ")";
       });
 
       d3.event.sourceEvent.stopPropagation();
     }) // drag
-    .on("dragend.svg", function (d, i) {
+    .on("dragend.svg", function () {
       var $moved = d3.select(this);
       if ($moved.classed("selected")) {
         $moved = e.sistersSelectedSelection($moved);
@@ -13278,7 +13285,7 @@ e.SketchSVG = (function () {
 
           $point.append("circle").attr("cx", 0).attr("cy", 0).attr("r", function (d) {
             // font-size must be a style attribute of point
-            return parseInt(d3.select(".point").style("font-size"), 10);
+            return parseFloat(d3.select(".point").style("font-size")) * 0.666666666666666;
           });
 
           $point.append("text").attr("class", "label").text(function (d) {
@@ -13343,14 +13350,13 @@ e.sistersSelectedSelection = function ($point) {
 
 module.exports = exports = e;
 
-},{"./data.js":13,"./sketch.js":17,"d3":6,"debug":7}],17:[function(require,module,exports){
+},{"./data.js":13,"d3":6,"debug":7}],17:[function(require,module,exports){
 "use strict";
 
 var _createClass = (function () { function defineProperties(target, props) { for (var key in props) { var prop = props[key]; prop.configurable = true; if (prop.value) prop.writable = true; } Object.defineProperties(target, props); } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
 
 var _classCallCheck = function (instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } };
 
-var d3 = require("d3");
 var debug = require("debug")("sketch:sketch");
 
 var data = require("./data.js");
@@ -13400,4 +13406,242 @@ e.Sketch = (function () {
 
 module.exports = exports = e;
 
-},{"./data.js":13,"./sketch-control.js":15,"./sketch-svg.js":16,"d3":6,"debug":7}]},{},[12]);
+},{"./data.js":13,"./sketch-control.js":15,"./sketch-svg.js":16,"debug":7}],18:[function(require,module,exports){
+"use strict";
+
+var _createClass = (function () { function defineProperties(target, props) { for (var key in props) { var prop = props[key]; prop.configurable = true; if (prop.value) prop.writable = true; } Object.defineProperties(target, props); } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
+
+var _classCallCheck = function (instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } };
+
+var d3 = require("d3");
+var debug = require("debug")("sketch:transition:control");
+
+var e = {};
+
+e.TransitionControl = (function () {
+  var _class = function (parent) {
+    var _this = this;
+
+    _classCallCheck(this, _class);
+
+    var that = this;
+
+    this.parent = parent;
+    this.structure = this.parent.structure;
+    this.id = this.parent.id.replace(/.*-/, "transition-control-");
+
+    this.$selection = this.parent.$selection.append("div").attr("class", "transition-control").attr("id", this.id);
+
+    this.$selection.append("button").attr("class", "transition-control-element").classed("backward", true).text("Backward").on("click", function () {
+      _this.parent.run("backward");
+    });
+
+    this.$duration = this.$selection.append("input").attr("class", "transition-control-element").classed("duration", true).text("duration").attr("value", this.parent.duration).attr("type", "number").attr("step", "1").attr("min", "0").attr("max", "60").on("change", function () {
+      that.parent.duration = that.$duration.node().value;
+    });
+
+    var easeStyleStrings = ["cubic", "linear", "quad", "sin", "exp", "circle", "elastic", "back", "bounce"];
+    this.$easeStyle = this.$selection.append("select").attr("class", "transition-control-element");
+    this.$easeStyle.on("change", function () {
+      if (d3.event.defaultPrevented) {
+        debug("transition ease change prevented");
+        return;
+      }
+      _this.parent.setEaseStyle(_this.$easeStyle.node().value);
+      d3.event.stopPropagation();
+    });
+
+    for (var i = 0; i < easeStyleStrings.length; ++i) {
+      this.$easeStyle.append("option").attr("value", easeStyleStrings[i]).text(easeStyleStrings[i]);
+    }
+
+    var easeStyleExtensionStrings = ["in", "out", "in-out", "out-in"];
+    this.$easeStyleExtension = this.$selection.append("select").attr("class", "transition-control-element");
+    this.$easeStyleExtension.on("change", function () {
+      if (d3.event.defaultPrevented) {
+        debug("transition ease change prevented");
+        return;
+      }
+      _this.parent.setEaseStyle("", _this.$easeStyleExtension.node().value);
+      d3.event.stopPropagation();
+    });
+
+    for (var i = 0; i < easeStyleExtensionStrings.length; ++i) {
+      this.$easeStyleExtension.append("option").attr("value", easeStyleExtensionStrings[i]).text(easeStyleExtensionStrings[i]);
+    }
+
+    this.$selection.append("button").attr("class", "transition-control-element").classed("forward", true).text("Forward").on("click", function () {
+      _this.parent.run("forward");
+    });
+  };
+
+  _createClass(_class, {
+    update: {
+      value: function update() {
+        return this;
+      }
+    }
+  });
+
+  return _class;
+})(); // transitionControl class
+
+module.exports = exports = e;
+
+},{"d3":6,"debug":7}],19:[function(require,module,exports){
+"use strict";
+
+var _createClass = (function () { function defineProperties(target, props) { for (var key in props) { var prop = props[key]; prop.configurable = true; if (prop.value) prop.writable = true; } Object.defineProperties(target, props); } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
+
+var _classCallCheck = function (instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } };
+
+var d3 = require("d3");
+var debug = require("debug")("sketch:transition:svg");
+
+var e = {};
+
+e.TransitionSVG = (function () {
+  var _class = function (parent, width, height) {
+    _classCallCheck(this, _class);
+
+    this.parent = parent;
+    this.domain = this.parent.domain;
+    this.width = width;
+    this.height = height;
+
+    this.x = d3.scale.linear().domain(this.domain.x).range([0, this.width]);
+
+    this.y = d3.scale.linear().domain(this.domain.y).range([0, this.height]);
+
+    this.$selection = this.parent.$selection.append("g").attr("transform", "translate(0,0)") // margins
+    .append("svg").attr("class", "transition-svg").attr("id", this.parent.id.replace(/.*-/, "transition-svg-")).attr("width", this.width).attr("height", this.height);
+
+    this.update();
+  };
+
+  _createClass(_class, {
+    update: {
+      value: function update() {
+        var _this = this;
+
+        // update
+        var $updated = this.$selection.selectAll(".point").data(this.parent.data.values, function (d) {
+          return d.Id;
+        });
+
+        $updated.transition().ease(this.parent.easeString).duration(this.parent.duration * 1000).attr("transform", function (d) {
+          return "translate(" + _this.x(d.x) + "," + _this.y(d.y) + ")";
+        });
+
+        // exit
+        $updated.exit().remove();
+
+        // enter
+        $updated.enter().append("g").attr("class", "point").attr("transform", function (d) {
+          return "translate(" + _this.x(d.x) + "," + _this.y(d.y) + ")";
+        }).each(function (d, i, a) {
+          debug("added %s, %, %s", d, i, a);
+
+          var $point = d3.select(this);
+
+          $point.append("circle").attr("cx", 0).attr("cy", 0).attr("r", function () {
+            // font-size must be a style attribute of point
+            return parseFloat(d3.select(".point").style("font-size")) * 0.6666666666666666;
+          });
+
+          $point.append("text").attr("class", "label").text(function (d2) {
+            return (d2.Id + 1).toString();
+          }).attr("dy", "0.3333333333333333em");
+        });
+      }
+    }
+  });
+
+  return _class;
+})();
+
+module.exports = exports = e;
+
+},{"d3":6,"debug":7}],20:[function(require,module,exports){
+"use strict";
+
+var _createClass = (function () { function defineProperties(target, props) { for (var key in props) { var prop = props[key]; prop.configurable = true; if (prop.value) prop.writable = true; } Object.defineProperties(target, props); } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
+
+var _classCallCheck = function (instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } };
+
+var debug = require("debug")("sketch:transition");
+
+var data = require("./data.js");
+var control = require("./transition-control.js");
+var svg = require("./transition-svg.js");
+
+var e = {};
+
+e.Transition = (function () {
+  var _class = function (params) {
+    _classCallCheck(this, _class);
+
+    // class
+    e.Transition.count = e.Transition.count || 0;
+    ++e.Transition.count;
+
+    // object
+    this.$parent = params.$parent;
+    this.structure = params.structure;
+    this.domain = params.domain;
+    this.data = new data.Set();
+    this.id = "transition-" + e.Transition.count;
+    this.$selection = this.$parent.append("div").attr("class", "transition").attr("id", this.id);
+    this.start = params.start;
+    this.end = params.end;
+
+    this.duration = 5;
+    this.easeStyle = "cubic";
+    this.easeStyleExtension = "in";
+    this.easeString = this.easeStyle + "-" + this.easeStyleExtension;
+
+    this.control = new control.TransitionControl(this);
+
+    var svgWidth = this.$selection.node().clientWidth;
+    var svgHeight = Math.floor(svgWidth * (this.domain.y[1] - this.domain.y[0]) / (this.domain.x[1] - this.domain.x[0]));
+
+    this.svg = new svg.TransitionSVG(this, svgWidth, svgHeight);
+  };
+
+  _createClass(_class, {
+    update: {
+      value: function update() {
+        this.control.update();
+        this.svg.update();
+
+        return this;
+      }
+    },
+    run: {
+      value: function run(mode) {
+        switch (mode) {
+          case "forward":
+            this.data = this.end.data;
+            break;
+          case "backward":
+            this.data = this.start.data;
+            break;
+        }
+        this.update();
+      }
+    },
+    setEaseStyle: {
+      value: function setEaseStyle(style, extension) {
+        this.easeStyle = style || this.easeStyle;
+        this.easeStyleExtension = extension || this.easeStyleExtension;
+        this.easeString = this.easeStyle + "-" + this.easeStyleExtension;
+      }
+    }
+  });
+
+  return _class;
+})();
+
+module.exports = exports = e;
+
+},{"./data.js":13,"./transition-control.js":18,"./transition-svg.js":19,"debug":7}]},{},[12]);

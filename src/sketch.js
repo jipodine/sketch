@@ -1,4 +1,5 @@
-const d3 = require('d3');
+'use strict';
+
 const debug = require('debug')('sketch:sketch');
 
 const data = require('./data.js');
@@ -12,7 +13,7 @@ e.Sketch = class {
   constructor(params) {
     // class
     e.Sketch.count = e.Sketch.count || 0;
-    ++ e.Sketch.count;
+    ++e.Sketch.count;
 
     // object
     this.$parent = params.$parent;

@@ -6,6 +6,7 @@ body {
 
 .app-control {
     display: inline-block;
+    width: 100%;
     float: right;
 }
 
@@ -18,6 +19,10 @@ body {
 
 .sketch {
     margin: 0;
+    width: 47.5%;
+    display: inline-table;
+    float: initial;
+        
 }
 
 .sketch-svg {
@@ -35,19 +40,46 @@ body {
 
 .sketch-control-element {
     display: inline-block;
-    margin: 10px;
+    margin: 2px;
     border: 10px;
 }
 
 .sketch-control-element.selected {
-    stroke: red;
     border: 1px solid black;
     background-color: transparent;
 }
 
+.transition {
+    margin: 0;
+    width: 96%;
+    float: left;
+    display:inline-block;
+        
+}
+
+.transition-svg {
+    margin: 0 auto;
+    border: 1px solid grey;
+}
+
+.transition-control {
+    float: left;
+    border: 1px solid grey;
+}
+
+.transition-control-element {
+    display: inline-block;
+    margin: 2px;
+    border: 10px;
+}
+
+input.transition-control-element{
+    width: 5em;
+}
+
 .point {
     text-anchor: middle;
-    font-size: large;
+    font-size: normal;
     cursor: pointer;
     fill: #ddd;
     stroke: #fff;

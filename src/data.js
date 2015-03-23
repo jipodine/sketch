@@ -1,3 +1,5 @@
+'use strict';
+
 let e = {};
 
 e.randomName = function (size = 3) {
@@ -6,7 +8,7 @@ e.randomName = function (size = 3) {
 
   let flip = Math.random() > 0.5;
   let name = '';
-  for(let i = 0; i < size; ++ i, flip = !flip) {
+  for(let i = 0; i < size; ++i, flip = !flip) {
     const l = flip ? c : v;
     name += l.charAt(Math.floor(Math.random() * l.length) );
   }
@@ -65,15 +67,15 @@ e.Set = class {
   }
 
   insertPoint(point = {}, Id = 0) {
-    point.Id = this.values.length;
-    this.values.splice(point.ID, 0, e.point.construct(point) );
+    point.Id = Id || this.values.length;
+    this.values.splice(point.Id, 0, e.point.construct(point) );
     return this;
   }
 
   addRandom(number) {
-    const extend = {  x: this.domain.x[1] - this.domain.x[0],
-                      y: this.domain.y[1] - this.domain.y[0] };
-    for(let i = 0; i < number; ++ i) {
+    const extend = { x: this.domain.x[1] - this.domain.x[0],
+                     y: this.domain.y[1] - this.domain.y[0] };
+    for(let i = 0; i < number; ++i) {
       this.addPoint( { x: Math.random() * extend.x + this.domain.x[0],
                        y: Math.random() * extend.y + this.domain.y[0]} );
     }

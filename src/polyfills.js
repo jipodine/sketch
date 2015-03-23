@@ -1,3 +1,5 @@
+'use strict';
+
 let e = {};
 
 if(typeof Array.prototype.findIndex === 'undefined') {

@@ -1,7 +1,8 @@
+'use strict';
+
 const d3 = require('d3');
 const debug = require('debug')('sketch:svg');
 
-const sketch = require('./sketch.js');
 const data = require('./data.js');
 
 let e = {};
@@ -29,8 +30,8 @@ e.SketchSVG = class {
       .attr('class', 'sketch-svg')
       .attr('id', this.parent.id.replace(/.*-/, 'sketch-svg-'))
       .attr('width', this.width)
-      .attr('height', this.height)    // .attr("pointer-events", "all")
-      .on('click.svg', function (d, i)  {
+      .attr('height', this.height)    // .attr('pointer-events', 'all')
+      .on('click.svg', function () {
         if(d3.event.defaultPrevented) {
           debug('svg click prevented');
           return;
@@ -47,16 +48,15 @@ e.SketchSVG = class {
     this.brush = d3.svg.brush()
       .x(this.x)
       .y(this.y)
-      .on("brush", () => { this.brushed(); } )
-      .on("brushend", () => { this.brushended(); } );
+      .on('brush', () => { this.brushed(); } )
+      .on('brushend', () => { this.brushended(); } );
 
     this.drag = d3.behavior.drag()
       .origin(function(d) {
-        const $origin = d3.select(this);
         return { x: that.x(d.x),
                  y: that.y(d.y) };
       }) // origin
-      .on('drag.svg', function (d,i) {
+      .on('drag.svg', function (d) {
         if(d3.event.defaultPrevented) {
           debug('svg click prevented');
           return;
@@ -69,21 +69,21 @@ e.SketchSVG = class {
 
         const translate = { x: d3.event.x - that.x(d.x),
                             y: d3.event.y - that.y(d.y) };
-        $move.attr('transform', function (d) {
-          return 'translate(' + (that.x(d.x) + translate.x) + ','
-            + (that.y(d.y) + translate.y) + ')';
+        $move.attr('transform', function (d2) {
+          return 'translate(' + (that.x(d2.x) + translate.x) + ','
+            + (that.y(d2.y) + translate.y) + ')';
         });
 
         d3.event.sourceEvent.stopPropagation();
       }) // drag
-      .on('dragend.svg', function (d, i) {
+      .on('dragend.svg', function () {
         let $moved = d3.select(this);
         if($moved.classed('selected') ) {
           $moved = e.sistersSelectedSelection($moved);
         }
 
         let updated = false;
-        for (let s = 0; s < $moved[0].length; ++ s) {
+        for (let s = 0; s < $moved[0].length; ++s) {
           let avatar = $moved[0][s].__data__;
           const index = that.data.values.findIndex( (element) => {
             return data.point.same(element, avatar);
@@ -91,8 +91,8 @@ e.SketchSVG = class {
 
           if(index >= 0 && index < that.data.values.length) {
             let original = that.data.values[index];
-            const translate =  d3.transform(d3.select($moved[0][s])
-                                            .attr('transform')).translate;
+            const translate = d3.transform(d3.select($moved[0][s])
+                                           .attr('transform')).translate;
             original.x = that.x.invert(translate[0]);
             original.y = that.y.invert(translate[1]);
             updated = true;
@@ -112,10 +112,10 @@ e.SketchSVG = class {
     const that = this;
 
     // update
-    const $updated = this.$selection.selectAll(".point")
+    const $updated = this.$selection.selectAll('.point')
             .data(this.data.values)
             .attr('transform', (d) => {
-              return "translate(" + this.x(d.x) + "," + this.y(d.y) + ")";
+              return 'translate(' + this.x(d.x) + ',' + this.y(d.y) + ')';
             });
 
     // exit
@@ -126,9 +126,9 @@ e.SketchSVG = class {
     // enter
     $updated
       .enter().append('g')
-      .attr("class", "point")
+      .attr('class', 'point')
       .attr('transform', (d) => {
-        return "translate(" + this.x(d.x) + "," + this.y(d.y) + ")";
+        return 'translate(' + this.x(d.x) + ',' + this.y(d.y) + ')';
       })
       .on('click', function (d, i) {
         if(d3.event.defaultPrevented) {
@@ -186,12 +186,13 @@ e.SketchSVG = class {
 
         const $point = d3.select(this);
 
-        $point.append("circle")
-          .attr("cx", 0)
-          .attr("cy", 0)
+        $point.append('circle')
+          .attr('cx', 0)
+          .attr('cy', 0)
           .attr('r', function (d) {
             // font-size must be a style attribute of point
-            return parseInt(d3.select('.point').style('font-size'), 10);
+            return parseFloat(d3.select('.point').style('font-size') )
+              * 0.666666666666666;
           });
 
         $point.append('text')
@@ -203,7 +204,7 @@ e.SketchSVG = class {
   }
 
   brushed() {
-    const $point = this.$selection.selectAll(".point");
+    const $point = this.$selection.selectAll('.point');
     const extent = this.brush.extent();
     $point.each(function(d) { d.selected = false; });
     if(this.brush.empty() ) {
@@ -211,7 +212,7 @@ e.SketchSVG = class {
       // d3.event.target.extent(d3.select(this.parentNode));
       //  d3.select(this.parentNode).event(svgClick);
     } else {
-      $point.classed("selected", function(d) {
+      $point.classed('selected', function(d) {
         return d.x >= extent[0][0] && d.x <= extent[1][0]
           && d.y >= extent[0][1] && d.y <= extent[1][1];
       });
@@ -235,8 +236,8 @@ e.SketchSVG = class {
   brushAdd() {
     if(d3.selectAll(this.$selection.node().childNodes)
        .filter('.brush')[0].length === 0) {
-      this.$selection.insert("g", ':first-child')
-        .attr("class", "brush")
+      this.$selection.insert('g', ':first-child')
+        .attr('class', 'brush')
         .call(this.brush)
         .call(this.brush.event);
     }
@@ -246,7 +247,7 @@ e.SketchSVG = class {
 
 // helpers
 e.invertSelection = function($point) {
-  $point.classed('selected', ! $point.classed('selected') );
+  $point.classed('selected', !$point.classed('selected') );
 };
 
 e.sistersSelectedSelection = function($point) {

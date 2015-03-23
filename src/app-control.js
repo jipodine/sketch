@@ -1,5 +1,6 @@
+'use strict';
+
 const debug = require('debug')('sketch:app');
-const d3 = require('d3');
 
 const pjson = require('../package.json');
 
@@ -52,7 +53,7 @@ e.AppControl = class {
           .replace(/[:/.]/g, '-').replace(/ /g, '_')
           + '.json';
     this.$exportLink.attr('href', url)
-      .attr('download',  name);
+      .attr('download', name);
     this.$exportLink.node().click();
 
     return this;
