@@ -47,6 +47,42 @@ e.SketchSVG = class {
         }
       });
 
+    this.axisMargin = 0;
+
+    this.xAxis = d3.svg.axis()
+      .scale(this.x)
+      .tickValues([-this.domain.x[0], 0, this.domain.x[0]])
+      .orient('bottom');
+
+    this.$xAxis = this.$selection.append('g')
+      .attr('class', 'x-axis')
+      .attr('transform', 'translate(' + 0 + ',' + (this.height - this.axisMargin) + ')' )
+      .call(this.xAxis);
+
+    d3.selectAll(this.$xAxis.node().childNodes).append('line')
+      .classed('grid-line', true)
+      .attr('x1', 0)
+      .attr('y1', 0)
+      .attr('x2', 0)
+      .attr('y2', 2 * this.axisMargin - this.height);
+
+    this.yAxis = d3.svg.axis()
+      .scale(this.y)
+      .tickValues([-this.domain.y[0], 0, this.domain.y[0]])
+      .orient('left');
+
+    this.$yAxis = this.$selection.append('g')
+      .attr('class', 'y-axis')
+      .attr('transform', 'translate(' + this.axisMargin + ',' + 0 + ')' )
+      .call(this.yAxis);
+
+    d3.selectAll(this.$yAxis.node().childNodes).append('line')
+      .classed('grid-line', true)
+      .attr('x1', 0)
+      .attr('y1', 0)
+      .attr('x2', this.width - 2 * this.axisMargin)
+      .attr('y2', 0);
+
     this.brush = d3.svg.brush()
       .x(this.x)
       .y(this.y)

@@ -1,5 +1,6 @@
 'use strict';
 
+const d3 = require('d3');
 const debug = require('debug')('sketch:app');
 
 const pjson = require('../package.json');
@@ -17,6 +18,22 @@ e.AppControl = class {
     this.$selection = this.parent.$selection.append('div')
       .attr('class', 'app-control')
       .attr('id', this.id);
+
+    this.$grid = this.$selection.append('button')
+      .attr('class', 'app-control-element')
+      .classed('grid', true)
+      .classed('selected', true)
+      .text('Grid')
+      .on('click', function () {
+        const $grid = d3.select(this);
+        $grid.classed('selected', !$grid.classed('selected') );
+        if($grid.classed('selected') ) {
+          d3.selectAll('.grid-line').style('display', null);
+        } else {
+          d3.selectAll('.grid-line').style('display', 'none');
+        }
+      });
+
 
     this.$export = this.$selection.append('button')
       .attr('class', 'app-control-element')

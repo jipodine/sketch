@@ -12572,6 +12572,7 @@ var _createClass = (function () { function defineProperties(target, props) { for
 
 var _classCallCheck = function (instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } };
 
+var d3 = require("d3");
 var debug = require("debug")("sketch:app");
 
 var pjson = require("../package.json");
@@ -12593,6 +12594,16 @@ e.AppControl = (function () {
     this.id = id;
 
     this.$selection = this.parent.$selection.append("div").attr("class", "app-control").attr("id", this.id);
+
+    this.$grid = this.$selection.append("button").attr("class", "app-control-element").classed("grid", true).classed("selected", true).text("Grid").on("click", function () {
+      var $grid = d3.select(this);
+      $grid.classed("selected", !$grid.classed("selected"));
+      if ($grid.classed("selected")) {
+        d3.selectAll(".grid-line").style("display", null);
+      } else {
+        d3.selectAll(".grid-line").style("display", "none");
+      }
+    });
 
     this.$export = this.$selection.append("button").attr("class", "app-control-element").classed("export", true).text("Export").on("click", function () {
       _this.exportToFile();
@@ -12666,7 +12677,7 @@ e.AppControl = (function () {
 
 module.exports = exports = e;
 
-},{"../package.json":10,"./data.js":13,"debug":7}],12:[function(require,module,exports){
+},{"../package.json":10,"./data.js":13,"d3":6,"debug":7}],12:[function(require,module,exports){
 "use strict";
 
 var debug = require("debug")("sketch:app");
@@ -13150,6 +13161,20 @@ e.SketchSVG = (function () {
       }
     });
 
+    this.axisMargin = 0;
+
+    this.xAxis = d3.svg.axis().scale(this.x).tickValues([-this.domain.x[0], 0, this.domain.x[0]]).orient("bottom");
+
+    this.$xAxis = this.$selection.append("g").attr("class", "x-axis").attr("transform", "translate(" + 0 + "," + (this.height - this.axisMargin) + ")").call(this.xAxis);
+
+    d3.selectAll(this.$xAxis.node().childNodes).append("line").classed("grid-line", true).attr("x1", 0).attr("y1", 0).attr("x2", 0).attr("y2", 2 * this.axisMargin - this.height);
+
+    this.yAxis = d3.svg.axis().scale(this.y).tickValues([-this.domain.y[0], 0, this.domain.y[0]]).orient("left");
+
+    this.$yAxis = this.$selection.append("g").attr("class", "y-axis").attr("transform", "translate(" + this.axisMargin + "," + 0 + ")").call(this.yAxis);
+
+    d3.selectAll(this.$yAxis.node().childNodes).append("line").classed("grid-line", true).attr("x1", 0).attr("y1", 0).attr("x2", this.width - 2 * this.axisMargin).attr("y2", 0);
+
     this.brush = d3.svg.brush().x(this.x).y(this.y).on("brush", function () {
       _this.brushed();
     }).on("brushend", function () {
@@ -13528,6 +13553,20 @@ e.TransitionSVG = (function () {
 
     this.$selection = this.parent.$selection.append("g").attr("transform", "translate(0,0)") // margins
     .append("svg").attr("class", "transition-svg").attr("id", this.parent.id.replace(/.*-/, "transition-svg-")).attr("width", this.width).attr("height", this.height);
+
+    this.axisMargin = 0;
+
+    this.xAxis = d3.svg.axis().scale(this.x).tickValues([-this.domain.x[0], 0, this.domain.x[0]]).orient("bottom");
+
+    this.$xAxis = this.$selection.append("g").attr("class", "x-axis").attr("transform", "translate(" + 0 + "," + (this.height - this.axisMargin) + ")").call(this.xAxis);
+
+    d3.selectAll(this.$xAxis.node().childNodes).append("line").classed("grid-line", true).attr("x1", 0).attr("y1", 0).attr("x2", 0).attr("y2", 2 * this.axisMargin - this.height);
+
+    this.yAxis = d3.svg.axis().scale(this.y).tickValues([-this.domain.y[0], 0, this.domain.y[0]]).orient("left");
+
+    this.$yAxis = this.$selection.append("g").attr("class", "y-axis").attr("transform", "translate(" + this.axisMargin + "," + 0 + ")").call(this.yAxis);
+
+    d3.selectAll(this.$yAxis.node().childNodes).append("line").classed("grid-line", true).attr("x1", 0).attr("y1", 0).attr("x2", this.width - 2 * this.axisMargin).attr("y2", 0);
 
     this.update();
   };
