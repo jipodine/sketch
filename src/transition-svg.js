@@ -20,6 +20,8 @@ e.TransitionSVG = class {
       .domain(this.domain.y)
       .range([0, this.height]);
 
+    this.colorScale = d3.scale.category20();
+
     this.$selection = this.parent.$selection.append('g')
       .attr('transform', 'translate(0,0)') // margins
       .append('svg')
@@ -32,6 +34,7 @@ e.TransitionSVG = class {
   }
 
   update() {
+    const that = this;
     // update
     const $updated = this.$selection.selectAll('.point')
             .data(this.parent.data.values, function (d) { return d.Id; });
@@ -56,6 +59,8 @@ e.TransitionSVG = class {
       .attr('transform', (d) => {
         return 'translate(' + this.x(d.x) + ',' + this.y(d.y) + ')';
       })
+      .style('fill', function(d) { return that.colorScale(d.Id); })
+      .style('stroke', function(d) { return that.colorScale(d.Id); })
       .each( function (d, i, a) {
         debug('added %s, %, %s', d, i, a);
 

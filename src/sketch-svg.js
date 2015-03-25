@@ -24,6 +24,8 @@ e.SketchSVG = class {
       .domain(this.domain.y)
       .range([0, this.height]);
 
+    this.colorScale = d3.scale.category20();
+
     this.$selection = this.parent.$selection.append('g')
       .attr('transform', 'translate(0,0)') // margins
       .append('svg')
@@ -130,7 +132,9 @@ e.SketchSVG = class {
       .attr('transform', (d) => {
         return 'translate(' + this.x(d.x) + ',' + this.y(d.y) + ')';
       })
-      .on('click', function (d, i) {
+      .style('fill', function(d) { return that.colorScale(d.Id); })
+      .style('stroke', function(d) { return that.colorScale(d.Id); })
+      .on('click', function () {
         if(d3.event.defaultPrevented) {
           debug('svg click prevented');
           return;
@@ -152,7 +156,7 @@ e.SketchSVG = class {
           }
 
           let updated = false;
-          for (let s = 0; s < $deleted[0].length; ++ s) {
+          for (let s = 0; s < $deleted[0].length; ++s) {
             const avatar = $deleted[0][s].__data__;
             const index = that.data.values.findIndex( (element) => {
               return data.point.same(element, avatar);

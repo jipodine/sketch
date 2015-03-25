@@ -81,8 +81,8 @@ input.transition-control-element{
     text-anchor: middle;
     font-size: normal;
     cursor: pointer;
-    fill: #ddd;
-    stroke: #fff;
+    fill-opacity: 0.8;
+    stroke-width: 1;
 }
 
 .point > text {
@@ -91,9 +91,14 @@ input.transition-control-element{
 }
 
 .point.selected {
-    fill: #faa;
+    fill-opacity: 0.3;
+    stroke-width: 5;
+}
+
+.point.selected > text {
     fill-opacity: 1;
-    stroke: #a22;
+    stroke: #111;
+    stroke-width: 1;
 }
 
 

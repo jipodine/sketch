@@ -29,7 +29,7 @@ e.TransitionControl = class {
       .text('duration')
       .attr('value', this.parent.duration)
       .attr('type', 'number')
-      .attr('step', '1')
+      .attr('step', '0.5')
       .attr('min', '0')
       .attr('max', '60')
       .on('change', function () {

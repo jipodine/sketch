@@ -13126,6 +13126,8 @@ e.SketchSVG = (function () {
 
     this.y = d3.scale.linear().domain(this.domain.y).range([0, this.height]);
 
+    this.colorScale = d3.scale.category20();
+
     this.$selection = this.parent.$selection.append("g").attr("transform", "translate(0,0)") // margins
     .append("svg").attr("class", "sketch-svg").attr("id", this.parent.id.replace(/.*-/, "sketch-svg-")).attr("width", this.width).attr("height", this.height) // .attr('pointer-events', 'all')
     .on("click.svg", function () {
@@ -13227,7 +13229,11 @@ e.SketchSVG = (function () {
         // enter
         $updated.enter().append("g").attr("class", "point").attr("transform", function (d) {
           return "translate(" + _this.x(d.x) + "," + _this.y(d.y) + ")";
-        }).on("click", function (d, i) {
+        }).style("fill", function (d) {
+          return that.colorScale(d.Id);
+        }).style("stroke", function (d) {
+          return that.colorScale(d.Id);
+        }).on("click", function () {
           if (d3.event.defaultPrevented) {
             debug("svg click prevented");
             return;
@@ -13436,7 +13442,7 @@ e.TransitionControl = (function () {
       _this.parent.run("backward");
     });
 
-    this.$duration = this.$selection.append("input").attr("class", "transition-control-element").classed("duration", true).text("duration").attr("value", this.parent.duration).attr("type", "number").attr("step", "1").attr("min", "0").attr("max", "60").on("change", function () {
+    this.$duration = this.$selection.append("input").attr("class", "transition-control-element").classed("duration", true).text("duration").attr("value", this.parent.duration).attr("type", "number").attr("step", "0.5").attr("min", "0").attr("max", "60").on("change", function () {
       that.parent.duration = that.$duration.node().value;
     });
 
@@ -13518,6 +13524,8 @@ e.TransitionSVG = (function () {
 
     this.y = d3.scale.linear().domain(this.domain.y).range([0, this.height]);
 
+    this.colorScale = d3.scale.category20();
+
     this.$selection = this.parent.$selection.append("g").attr("transform", "translate(0,0)") // margins
     .append("svg").attr("class", "transition-svg").attr("id", this.parent.id.replace(/.*-/, "transition-svg-")).attr("width", this.width).attr("height", this.height);
 
@@ -13529,6 +13537,7 @@ e.TransitionSVG = (function () {
       value: function update() {
         var _this = this;
 
+        var that = this;
         // update
         var $updated = this.$selection.selectAll(".point").data(this.parent.data.values, function (d) {
           return d.Id;
@@ -13544,6 +13553,10 @@ e.TransitionSVG = (function () {
         // enter
         $updated.enter().append("g").attr("class", "point").attr("transform", function (d) {
           return "translate(" + _this.x(d.x) + "," + _this.y(d.y) + ")";
+        }).style("fill", function (d) {
+          return that.colorScale(d.Id);
+        }).style("stroke", function (d) {
+          return that.colorScale(d.Id);
         }).each(function (d, i, a) {
           debug("added %s, %, %s", d, i, a);
 
