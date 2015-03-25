@@ -13440,7 +13440,7 @@ e.TransitionControl = (function () {
       that.parent.duration = that.$duration.node().value;
     });
 
-    var easeStyleStrings = ["cubic", "linear", "quad", "sin", "exp", "circle", "elastic", "back", "bounce"];
+    var easeStyleStrings = ["linear", "cubic", "quad", "sin", "exp", "circle", "elastic", "back", "bounce"];
     this.$easeStyle = this.$selection.append("select").attr("class", "transition-control-element");
     this.$easeStyle.on("change", function () {
       if (d3.event.defaultPrevented) {
@@ -13473,11 +13473,16 @@ e.TransitionControl = (function () {
     this.$selection.append("button").attr("class", "transition-control-element").classed("forward", true).text("Forward").on("click", function () {
       _this.parent.run("forward");
     });
+
+    this.update();
   };
 
   _createClass(_class, {
     update: {
       value: function update() {
+        this.$duration.attr("value", this.parent.duration);
+        this.$easeStyle.node().value = this.parent.easeStyle;
+        this.$easeStyleExtension.node().value = this.parent.easeStyleExtension;
         return this;
       }
     }
@@ -13546,12 +13551,12 @@ e.TransitionSVG = (function () {
 
           $point.append("circle").attr("cx", 0).attr("cy", 0).attr("r", function () {
             // font-size must be a style attribute of point
-            return parseFloat(d3.select(".point").style("font-size")) * 0.6666666666666666;
+            return parseFloat(d3.select(".point").style("font-size")) * 0.6666666666666666; // circle around 2 digits
           });
 
           $point.append("text").attr("class", "label").text(function (d2) {
             return (d2.Id + 1).toString();
-          }).attr("dy", "0.3333333333333333em");
+          }).attr("dy", "0.3333333333333333em"); // vertical centre
         });
       }
     }
@@ -13595,9 +13600,9 @@ e.Transition = (function () {
     this.start = params.start;
     this.end = params.end;
 
-    this.duration = 5;
+    this.duration = 2;
     this.easeStyle = "cubic";
-    this.easeStyleExtension = "in";
+    this.easeStyleExtension = "in-out";
     this.easeString = this.easeStyle + "-" + this.easeStyleExtension;
 
     this.control = new control.TransitionControl(this);
@@ -13628,6 +13633,8 @@ e.Transition = (function () {
             break;
         }
         this.update();
+
+        return this;
       }
     },
     setEaseStyle: {
@@ -13635,6 +13642,8 @@ e.Transition = (function () {
         this.easeStyle = style || this.easeStyle;
         this.easeStyleExtension = extension || this.easeStyleExtension;
         this.easeString = this.easeStyle + "-" + this.easeStyleExtension;
+
+        return this;
       }
     }
   });

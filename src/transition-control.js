@@ -36,7 +36,7 @@ e.TransitionControl = class {
         that.parent.duration = that.$duration.node().value;
       });
 
-    const easeStyleStrings = [ 'cubic', 'linear', 'quad', 'sin',
+    const easeStyleStrings = [ 'linear', 'cubic', 'quad', 'sin',
                                'exp', 'circle', 'elastic', 'back', 'bounce' ];
     this.$easeStyle = this.$selection.append('select')
       .attr('class', 'transition-control-element');
@@ -78,10 +78,15 @@ e.TransitionControl = class {
       .classed('forward', true)
       .text('Forward')
       .on('click', () => { this.parent.run('forward'); });
+
+    this.update();
   }
 
 
   update() {
+    this.$duration.attr('value', this.parent.duration);
+    this.$easeStyle.node().value = this.parent.easeStyle;
+    this.$easeStyleExtension.node().value = this.parent.easeStyleExtension;
     return this;
   }
 

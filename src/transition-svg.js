@@ -67,13 +67,13 @@ e.TransitionSVG = class {
           .attr('r', function () {
             // font-size must be a style attribute of point
             return parseFloat(d3.select('.point').style('font-size') )
-              * 0.666666666666666666;
+              * 0.666666666666666666; // circle around 2 digits
           });
 
         $point.append('text')
           .attr('class', 'label')
           .text( function (d2) { return (d2.Id + 1).toString(); })
-          .attr('dy', '0.3333333333333333em');
+          .attr('dy', '0.3333333333333333em'); // vertical centre
       });
 
   }

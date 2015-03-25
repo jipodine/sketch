@@ -27,9 +27,9 @@ e.Transition = class {
     this.start = params.start;
     this.end = params.end;
 
-    this.duration = 5;
+    this.duration = 2;
     this.easeStyle = 'cubic';
-    this.easeStyleExtension = 'in';
+    this.easeStyleExtension = 'in-out';
     this.easeString = this.easeStyle + '-' + this.easeStyleExtension;
 
     this.control = new control.TransitionControl(this);
@@ -58,12 +58,16 @@ e.Transition = class {
       break;
     }
     this.update();
+
+    return this;
   }
 
   setEaseStyle(style, extension) {
     this.easeStyle = style || this.easeStyle;
     this.easeStyleExtension = extension || this.easeStyleExtension;
     this.easeString = this.easeStyle + '-' + this.easeStyleExtension;
+
+    return this;
   }
 
 };
