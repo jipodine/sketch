@@ -23,15 +23,18 @@ app.init = function() {
 app.$selection = d3.select('body');
   app.control1 = new app.control.AppControl(app, 'app-control-1');
 
-  app.sketch1 = new app.sketch.Sketch({ $parent: d3.select('body'),
+  app.sketch1 = new app.sketch.Sketch({ top: app,
+                                        $parent: d3.select('body'),
                                         structure: app.structure,
                                         domain: app.domain });
 
-  app.sketch2 = new app.sketch.Sketch({ $parent: d3.select('body'),
+  app.sketch2 = new app.sketch.Sketch({ top: app,
+                                        $parent: d3.select('body'),
                                         structure: app.structure,
                                         domain: app.domain });
   app.transition12 = new app.transition.Transition(
-    { $parent: d3.select('body'),
+    { top: app,
+      $parent: d3.select('body'),
       structure: app.structure,
       domain: app.domain,
       start: app.sketch1,

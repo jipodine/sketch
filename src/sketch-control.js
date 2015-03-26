@@ -62,6 +62,7 @@ e.SketchControl = class {
 
     this.$presetList = this.$preset.append('select')
       .attr('class', 'sketch-control-element')
+      .classed('list', true)
       .on('change', () => {
         if(d3.event.defaultPrevented) {
           debug('preset list change prevented');
@@ -125,7 +126,10 @@ e.SketchControl = class {
            || window.confirm('Update ' + name + '?') ) ) {
       debug('%s saved', name);
       this.structure.addSet(this.parent.data, name);
-      this.updatePresetList();
+
+      // update all, including self
+      this.parent.top.update();
+
       this.loadPreset(name);
     }
 

@@ -12702,14 +12702,17 @@ app.init = function () {
   app.$selection = d3.select("body");
   app.control1 = new app.control.AppControl(app, "app-control-1");
 
-  app.sketch1 = new app.sketch.Sketch({ $parent: d3.select("body"),
+  app.sketch1 = new app.sketch.Sketch({ top: app,
+    $parent: d3.select("body"),
     structure: app.structure,
     domain: app.domain });
 
-  app.sketch2 = new app.sketch.Sketch({ $parent: d3.select("body"),
+  app.sketch2 = new app.sketch.Sketch({ top: app,
+    $parent: d3.select("body"),
     structure: app.structure,
     domain: app.domain });
-  app.transition12 = new app.transition.Transition({ $parent: d3.select("body"),
+  app.transition12 = new app.transition.Transition({ top: app,
+    $parent: d3.select("body"),
     structure: app.structure,
     domain: app.domain,
     start: app.sketch1,
@@ -12959,7 +12962,7 @@ e.SketchControl = (function () {
       _this.savePreset();
     });
 
-    this.$presetList = this.$preset.append("select").attr("class", "sketch-control-element").on("change", function () {
+    this.$presetList = this.$preset.append("select").attr("class", "sketch-control-element").classed("list", true).on("change", function () {
       if (d3.event.defaultPrevented) {
         debug("preset list change prevented");
         return;
@@ -12967,6 +12970,7 @@ e.SketchControl = (function () {
       that.loadPreset(_this.$presetList.node().value);
       d3.event.stopPropagation();
     });
+    // .on('click', () => { that.updatePresetList(); } );
 
     this.$preset.append("button").attr("class", "sketch-control-element").classed("delete", true).text("Delete").on("click", function () {
       _this.deletePreset();
@@ -13021,7 +13025,10 @@ e.SketchControl = (function () {
         if (name && (!this.structure.nameExists(name) || window.confirm("Update " + name + "?"))) {
           debug("%s saved", name);
           this.structure.addSet(this.parent.data, name);
-          this.updatePresetList();
+
+          this.parent.top.update();
+          // this.updatePresetList();
+
           this.loadPreset(name);
         }
 
@@ -13405,6 +13412,7 @@ e.Sketch = (function () {
     ++e.Sketch.count;
 
     // object
+    this.top = params.top;
     this.$parent = params.$parent;
     this.structure = params.structure;
     this.domain = params.domain;
@@ -13643,6 +13651,7 @@ e.Transition = (function () {
     ++e.Transition.count;
 
     // object
+    this.top = params.top;
     this.$parent = params.$parent;
     this.structure = params.structure;
     this.domain = params.domain;

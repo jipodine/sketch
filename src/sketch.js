@@ -16,6 +16,7 @@ e.Sketch = class {
     ++e.Sketch.count;
 
     // object
+    this.top = params.top;
     this.$parent = params.$parent;
     this.structure = params.structure;
     this.domain = params.domain;
