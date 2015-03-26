@@ -13470,8 +13470,20 @@ e.TransitionControl = (function () {
 
     this.$selection = this.parent.$selection.append("div").attr("class", "transition-control").attr("id", this.id);
 
-    this.$selection.append("button").attr("class", "transition-control-element").classed("backward", true).text("Backward").on("click", function () {
+    this.$selection.append("button").attr("class", "transition-control-element").classed("fast-backward", true).text("<<").on("click", function () {
+      _this.parent.run("fast-backward");
+    });
+
+    this.$selection.append("button").attr("class", "transition-control-element").classed("backward", true).text("<").on("click", function () {
       _this.parent.run("backward");
+    });
+
+    this.$selection.append("button").attr("class", "transition-control-element").classed("forward", true).text(">").on("click", function () {
+      _this.parent.run("forward");
+    });
+
+    this.$selection.append("button").attr("class", "transition-control-element").classed("fast-forward", true).text(">>").on("click", function () {
+      _this.parent.run("fast-forward");
     });
 
     this.$duration = this.$selection.append("input").attr("class", "transition-control-element").classed("duration", true).text("duration").attr("value", this.parent.duration).attr("type", "number").attr("step", "0.5").attr("min", "0").attr("max", "60").on("change", function () {
@@ -13507,10 +13519,6 @@ e.TransitionControl = (function () {
     for (var i = 0; i < easeStyleExtensionStrings.length; ++i) {
       this.$easeStyleExtension.append("option").attr("value", easeStyleExtensionStrings[i]).text(easeStyleExtensionStrings[i]);
     }
-
-    this.$selection.append("button").attr("class", "transition-control-element").classed("forward", true).text("Forward").on("click", function () {
-      _this.parent.run("forward");
-    });
 
     this.update();
   };
@@ -13687,12 +13695,31 @@ e.Transition = (function () {
         switch (mode) {
           case "forward":
             this.data = this.end.data;
+            this.update();
             break;
+          case "fast-forward":
+            {
+              var duration = this.duration;
+              this.duration = 0.5;
+              this.data = this.end.data;
+              this.svg.update();
+              this.duration = duration;
+              break;
+            }
           case "backward":
             this.data = this.start.data;
+            this.update();
             break;
+          case "fast-backward":
+            {
+              var duration = this.duration;
+              this.duration = 0.5;
+              this.data = this.start.data;
+              this.svg.update();
+              this.duration = duration;
+              break;
+            }
         }
-        this.update();
 
         return this;
       }

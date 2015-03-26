@@ -21,10 +21,12 @@ body {
     border: 1px solid black;
     background-color: transparent;
 }
+
 line.grid-line {
     stroke: black;
     shape-rendering: crispEdges;
     stroke-opacity: .2;
+    stroke-width: 1px;
 }
 
 .sketch {
@@ -88,6 +90,7 @@ input.transition-control-element{
 }
 
 .point {
+    font-size: 40px;
     text-anchor: middle;
     cursor: pointer;
     fill-opacity: 0.8;

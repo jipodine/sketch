@@ -19,9 +19,27 @@ e.TransitionControl = class {
 
     this.$selection.append('button')
       .attr('class', 'transition-control-element')
+      .classed('fast-backward', true)
+      .text('<<')
+      .on('click', () => { this.parent.run('fast-backward'); });
+
+    this.$selection.append('button')
+      .attr('class', 'transition-control-element')
       .classed('backward', true)
-      .text('Backward')
+      .text('<')
       .on('click', () => { this.parent.run('backward'); });
+
+    this.$selection.append('button')
+      .attr('class', 'transition-control-element')
+      .classed('forward', true)
+      .text('>')
+      .on('click', () => { this.parent.run('forward'); });
+
+    this.$selection.append('button')
+      .attr('class', 'transition-control-element')
+      .classed('fast-forward', true)
+      .text('>>')
+      .on('click', () => { this.parent.run('fast-forward'); });
 
     this.$duration = this.$selection.append('input')
       .attr('class', 'transition-control-element')
@@ -72,12 +90,6 @@ e.TransitionControl = class {
         .attr('value', easeStyleExtensionStrings[i])
         .text(easeStyleExtensionStrings[i]);
     }
-
-    this.$selection.append('button')
-      .attr('class', 'transition-control-element')
-      .classed('forward', true)
-      .text('Forward')
-      .on('click', () => { this.parent.run('forward'); });
 
     this.update();
   }
