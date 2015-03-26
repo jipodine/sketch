@@ -12546,7 +12546,7 @@ function plural(ms, n, name) {
 },{}],10:[function(require,module,exports){
 module.exports={
   "name": "sketch",
-  "version": "0.0.5",
+  "version": "0.1.0",
   "description": "",
   "main": "sketch-main.js",
   "scripts": {
@@ -12970,7 +12970,6 @@ e.SketchControl = (function () {
       that.loadPreset(_this.$presetList.node().value);
       d3.event.stopPropagation();
     });
-    // .on('click', () => { that.updatePresetList(); } );
 
     this.$preset.append("button").attr("class", "sketch-control-element").classed("delete", true).text("Delete").on("click", function () {
       _this.deletePreset();
@@ -13026,8 +13025,8 @@ e.SketchControl = (function () {
           debug("%s saved", name);
           this.structure.addSet(this.parent.data, name);
 
+          // update all, including self
           this.parent.top.update();
-          // this.updatePresetList();
 
           this.loadPreset(name);
         }
