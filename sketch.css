@@ -90,7 +90,7 @@ input.transition-control-element{
 }
 
 .point {
-    font-size: 40px;
+    font-size: 30px;
     text-anchor: middle;
     cursor: pointer;
     fill-opacity: 0.8;

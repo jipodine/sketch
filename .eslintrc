@@ -6,6 +6,7 @@
   },
   "rules": {
     "quotes": [1, "single"],
-    "no-underscore-dangle": 0, "_comment": "pseudo-private"
+    "no-underscore-dangle": 0, "_comment": "pseudo-private",
+    "no-shadow": 1, "_comment": "warning as a reminder"
   }
 }

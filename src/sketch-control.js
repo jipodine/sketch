@@ -48,6 +48,10 @@ e.SketchControl = class {
 
     this.setMode('add');
 
+    this.$modeAddOptions = this.$selection.append('div')
+      .attr('class', 'add-options')
+      .style('display', this.mode === 'add' ? null : 'none');
+
     ///// preset
 
     this.$preset = this.$selection.append('div')

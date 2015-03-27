@@ -12762,13 +12762,12 @@ e.point.construct = function () {
   var that = {};
   that.x = point.x || 0;
   that.y = point.y || 0;
-  that.Id = point.Id || 0;
-  that.name = typeof point.name !== "undefined" ? point.name : e.randomName(3);
+  that.id = point.id || 0;
   return that;
 };
 
 e.point.same = function (point1, point2) {
-  return point1.x === point2.x && point1.y === point2.y && point1.Id === point2.Id;
+  return point1.x === point2.x && point1.y === point2.y && point1.id === point2.id;
 };
 
 e.Set = (function () {
@@ -12778,6 +12777,9 @@ e.Set = (function () {
     this.domain = set && set.domain ? e.jsonClone(set.domain) : { x: [-1, 1], y: [-1, 1] };
 
     this.values = set && set.values ? e.jsonClone(set.values) : [];
+
+    this.idFromPoint = set && set.idFromPoint ? e.jsonClone(set.idFromPoint) : [];
+
     this.name = set && set.name ? set.name // immutable
     : e.randomName(4);
     return this;
@@ -12799,26 +12801,39 @@ e.Set = (function () {
         return this;
       }
     },
+    createId: {
+      value: function createId() {}
+    },
     addPoint: {
       value: function addPoint() {
         var point = arguments[0] === undefined ? {} : arguments[0];
 
-        point.Id = this.values.length;
-        this.values[point.Id] = e.point.construct(point);
-        return this;
-      }
-    },
-    insertPoint: {
-      value: function insertPoint() {
-        var point = arguments[0] === undefined ? {} : arguments[0];
-        var Id = arguments[1] === undefined ? 0 : arguments[1];
+        // start to increment from the last point
+        point.id = this.values.length > 0 ? this.values[this.values.length - 1].id + 1 : 1;
+        while (this.idFromPoint[point.id] !== undefined) {
+          ++point.id;
+        }
 
-        point.Id = Id || this.values.length;
-        this.values.splice(point.Id, 0, e.point.construct(point));
+        var valueId = this.values.length;
+        this.idFromPoint[point.id] = valueId;
+        this.values[valueId] = e.point.construct(point);
         return this;
       }
     },
     addRandom: {
+
+      // changePointId(point, id) {
+      //   point.id = id;
+      //   for(
+
+      // }
+
+      // insertPoint(point = {}, Id = 0) {
+      //   point.id = Id || this.values.length;
+      //   this.values.splice(point.id, 0, e.point.construct(point) );
+      //   return this;
+      // }
+
       value: function addRandom(number) {
         var extend = { x: this.domain.x[1] - this.domain.x[0],
           y: this.domain.y[1] - this.domain.y[0] };
@@ -12953,6 +12968,8 @@ e.SketchControl = (function () {
     });
 
     this.setMode("add");
+
+    this.$modeAddOptions = this.$selection.append("div").attr("class", "add-options").style("display", this.mode === "add" ? null : "none");
 
     ///// preset
 
@@ -13250,7 +13267,11 @@ e.SketchSVG = (function () {
         var that = this;
 
         // update
-        var $updated = this.$selection.selectAll(".point").data(this.data.values).attr("transform", function (d) {
+        var $updated = this.$selection.selectAll(".point").data(this.data.values, function (d) {
+          return d.id;
+        });
+
+        $updated.transition().ease(this.parent.easeString || "linear").duration(this.parent.duration * 1000 || 10).attr("transform", function (d) {
           return "translate(" + _this.x(d.x) + "," + _this.y(d.y) + ")";
         });
 
@@ -13261,9 +13282,9 @@ e.SketchSVG = (function () {
         $updated.enter().append("g").attr("class", "point").attr("transform", function (d) {
           return "translate(" + _this.x(d.x) + "," + _this.y(d.y) + ")";
         }).style("fill", function (d) {
-          return that.colorScale(d.Id);
+          return that.colorScale(d.id);
         }).style("stroke", function (d) {
-          return that.colorScale(d.Id);
+          return that.colorScale(d.id);
         }).on("click", function () {
           if (d3.event.defaultPrevented) {
             debug("svg click prevented");
@@ -13320,14 +13341,14 @@ e.SketchSVG = (function () {
 
           var $point = d3.select(this);
 
-          $point.append("circle").attr("cx", 0).attr("cy", 0).attr("r", function (d) {
+          $point.append("circle").attr("cx", 0).attr("cy", 0).attr("r", function () {
             // font-size must be a style attribute of point
-            return parseFloat(d3.select(".point").style("font-size")) * 0.666666666666666;
+            return parseFloat(d3.select(".point").style("font-size")) * 0.666666666666666; // circle around 2 digits
           });
 
           $point.append("text").attr("class", "label").text(function (d) {
-            return (d.Id + 1).toString();
-          }).attr("dy", "0.3333333333333333em");
+            return d.id.toString();
+          }).attr("dy", "0.3333333333333333em"); // vertical centre
         });
       }
     },
@@ -13542,99 +13563,36 @@ module.exports = exports = e;
 },{"d3":6,"debug":7}],19:[function(require,module,exports){
 "use strict";
 
-var _createClass = (function () { function defineProperties(target, props) { for (var key in props) { var prop = props[key]; prop.configurable = true; if (prop.value) prop.writable = true; } Object.defineProperties(target, props); } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
+var _get = function get(object, property, receiver) { var desc = Object.getOwnPropertyDescriptor(object, property); if (desc === undefined) { var parent = Object.getPrototypeOf(object); if (parent === null) { return undefined; } else { return get(parent, property, receiver); } } else if ("value" in desc && desc.writable) { return desc.value; } else { var getter = desc.get; if (getter === undefined) { return undefined; } return getter.call(receiver); } };
+
+var _inherits = function (subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) subClass.__proto__ = superClass; };
 
 var _classCallCheck = function (instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } };
 
 var d3 = require("d3");
 var debug = require("debug")("sketch:transition:svg");
 
+var sketchSVG = require("./sketch-svg.js");
+
 var e = {};
 
-e.TransitionSVG = (function () {
+e.TransitionSVG = (function (_sketchSVG$SketchSVG) {
   var _class = function (parent, width, height) {
     _classCallCheck(this, _class);
 
-    this.parent = parent;
-    this.domain = this.parent.domain;
-    this.width = width;
-    this.height = height;
-
-    this.x = d3.scale.linear().domain(this.domain.x).range([0, this.width]);
-
-    this.y = d3.scale.linear().domain(this.domain.y).range([0, this.height]);
-
-    this.colorScale = d3.scale.category20();
-
-    this.$selection = this.parent.$selection.append("g").attr("transform", "translate(0,0)") // margins
-    .append("svg").attr("class", "transition-svg").attr("id", this.parent.id.replace(/.*-/, "transition-svg-")).attr("width", this.width).attr("height", this.height);
-
-    this.axisMargin = 0;
-
-    this.xAxis = d3.svg.axis().scale(this.x).tickValues([-this.domain.x[0], 0, this.domain.x[0]]).orient("bottom");
-
-    this.$xAxis = this.$selection.append("g").attr("class", "x-axis").attr("transform", "translate(" + 0 + "," + (this.height - this.axisMargin) + ")").call(this.xAxis);
-
-    d3.selectAll(this.$xAxis.node().childNodes).append("line").classed("grid-line", true).attr("x1", 0).attr("y1", 0).attr("x2", 0).attr("y2", 2 * this.axisMargin - this.height);
-
-    this.yAxis = d3.svg.axis().scale(this.y).tickValues([-this.domain.y[0], 0, this.domain.y[0]]).orient("left");
-
-    this.$yAxis = this.$selection.append("g").attr("class", "y-axis").attr("transform", "translate(" + this.axisMargin + "," + 0 + ")").call(this.yAxis);
-
-    d3.selectAll(this.$yAxis.node().childNodes).append("line").classed("grid-line", true).attr("x1", 0).attr("y1", 0).attr("x2", this.width - 2 * this.axisMargin).attr("y2", 0);
-
-    this.update();
+    _get(Object.getPrototypeOf(_class.prototype), "constructor", this).call(this, parent, width, height);
+    this.drag = d3.behavior.drag(); // no drag
+    this.$selection.attr("class", "transition-svg").attr("id", this.parent.id.replace(/.*-/, "transition-svg-"));
   };
 
-  _createClass(_class, {
-    update: {
-      value: function update() {
-        var _this = this;
-
-        var that = this;
-        // update
-        var $updated = this.$selection.selectAll(".point").data(this.parent.data.values, function (d) {
-          return d.Id;
-        });
-
-        $updated.transition().ease(this.parent.easeString).duration(this.parent.duration * 1000).attr("transform", function (d) {
-          return "translate(" + _this.x(d.x) + "," + _this.y(d.y) + ")";
-        });
-
-        // exit
-        $updated.exit().remove();
-
-        // enter
-        $updated.enter().append("g").attr("class", "point").attr("transform", function (d) {
-          return "translate(" + _this.x(d.x) + "," + _this.y(d.y) + ")";
-        }).style("fill", function (d) {
-          return that.colorScale(d.Id);
-        }).style("stroke", function (d) {
-          return that.colorScale(d.Id);
-        }).each(function (d, i, a) {
-          debug("added %s, %, %s", d, i, a);
-
-          var $point = d3.select(this);
-
-          $point.append("circle").attr("cx", 0).attr("cy", 0).attr("r", function () {
-            // font-size must be a style attribute of point
-            return parseFloat(d3.select(".point").style("font-size")) * 0.6666666666666666; // circle around 2 digits
-          });
-
-          $point.append("text").attr("class", "label").text(function (d2) {
-            return (d2.Id + 1).toString();
-          }).attr("dy", "0.3333333333333333em"); // vertical centre
-        });
-      }
-    }
-  });
+  _inherits(_class, _sketchSVG$SketchSVG);
 
   return _class;
-})();
+})(sketchSVG.SketchSVG);
 
 module.exports = exports = e;
 
-},{"d3":6,"debug":7}],20:[function(require,module,exports){
+},{"./sketch-svg.js":16,"d3":6,"debug":7}],20:[function(require,module,exports){
 "use strict";
 
 var _createClass = (function () { function defineProperties(target, props) { for (var key in props) { var prop = props[key]; prop.configurable = true; if (prop.value) prop.writable = true; } Object.defineProperties(target, props); } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; })();
@@ -13694,27 +13652,27 @@ e.Transition = (function () {
       value: function run(mode) {
         switch (mode) {
           case "forward":
-            this.data = this.end.data;
+            this.svg.data = this.end.data;
             this.update();
             break;
           case "fast-forward":
             {
               var duration = this.duration;
               this.duration = 0.5;
-              this.data = this.end.data;
+              this.svg.data = this.end.data;
               this.svg.update();
               this.duration = duration;
               break;
             }
           case "backward":
-            this.data = this.start.data;
+            this.svg.data = this.start.data;
             this.update();
             break;
           case "fast-backward":
             {
               var duration = this.duration;
               this.duration = 0.5;
-              this.data = this.start.data;
+              this.svg.data = this.start.data;
               this.svg.update();
               this.duration = duration;
               break;

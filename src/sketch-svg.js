@@ -151,10 +151,17 @@ e.SketchSVG = class {
 
     // update
     const $updated = this.$selection.selectAll('.point')
-            .data(this.data.values)
-            .attr('transform', (d) => {
-              return 'translate(' + this.x(d.x) + ',' + this.y(d.y) + ')';
+            .data(this.data.values, function (d) {
+              return d.id;
             });
+
+    $updated
+      .transition()
+      .ease(this.parent.easeString || 'linear')
+      .duration(this.parent.duration * 1000 || 10)
+      .attr('transform', (d) => {
+        return 'translate(' + this.x(d.x) + ',' + this.y(d.y) + ')';
+      });
 
     // exit
     $updated
@@ -168,8 +175,8 @@ e.SketchSVG = class {
       .attr('transform', (d) => {
         return 'translate(' + this.x(d.x) + ',' + this.y(d.y) + ')';
       })
-      .style('fill', function(d) { return that.colorScale(d.Id); })
-      .style('stroke', function(d) { return that.colorScale(d.Id); })
+      .style('fill', function(d) { return that.colorScale(d.id); })
+      .style('stroke', function(d) { return that.colorScale(d.id); })
       .on('click', function () {
         if(d3.event.defaultPrevented) {
           debug('svg click prevented');
@@ -229,16 +236,16 @@ e.SketchSVG = class {
         $point.append('circle')
           .attr('cx', 0)
           .attr('cy', 0)
-          .attr('r', function (d) {
+          .attr('r', function () {
             // font-size must be a style attribute of point
             return parseFloat(d3.select('.point').style('font-size') )
-              * 0.666666666666666;
+              * 0.666666666666666; // circle around 2 digits
           });
 
         $point.append('text')
           .attr('class', 'label')
-          .text( function (d) { return (d.Id + 1).toString(); })
-          .attr('dy', '0.3333333333333333em');
+          .text( function (d) { return (d.id).toString(); })
+          .attr('dy', '0.3333333333333333em'); // vertical centre
       });
 
   }

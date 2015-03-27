@@ -20,16 +20,14 @@ e.point.construct = function (point = {}) {
   let that = {};
   that.x = point.x || 0;
   that.y = point.y || 0;
-  that.Id = point.Id || 0;
-  that.name = (typeof point.name !== 'undefined'
-               ? point.name : e.randomName(3) );
+  that.id = point.id || 0;
   return that;
 };
 
 e.point.same = function(point1, point2) {
   return point1.x === point2.x
     && point1.y === point2.y
-    && point1.Id === point2.Id;
+    && point1.id === point2.id;
 };
 
 e.Set = class {
@@ -41,6 +39,11 @@ e.Set = class {
     this.values = (set && set.values
                    ? e.jsonClone(set.values)
                    : [] );
+
+    this.idFromPoint = (set && set.idFromPoint
+                   ? e.jsonClone(set.idFromPoint)
+                   : [] );
+
     this.name = (set && set.name
                  ? set.name // immutable
                  : e.randomName(4) );
@@ -60,17 +63,38 @@ e.Set = class {
     return this;
   }
 
-  addPoint(point = {}) {
-    point.Id = this.values.length;
-    this.values[point.Id] = e.point.construct(point);
+  createId() {
+
+
+  }
+
+  addPoint(point = {} ) {
+    // start to increment from the last point
+    point.id = (this.values.length > 0
+                ? this.values[this.values.length - 1].id + 1
+                : 1);
+    while(this.idFromPoint[point.id] !== undefined) {
+      ++point.id;
+    }
+
+    const valueId = this.values.length;
+    this.idFromPoint[point.id] = valueId;
+    this.values[valueId] = e.point.construct(point);
     return this;
   }
 
-  insertPoint(point = {}, Id = 0) {
-    point.Id = Id || this.values.length;
-    this.values.splice(point.Id, 0, e.point.construct(point) );
-    return this;
-  }
+  // changePointId(point, id) {
+  //   point.id = id;
+  //   for(
+
+
+  // }
+
+  // insertPoint(point = {}, Id = 0) {
+  //   point.id = Id || this.values.length;
+  //   this.values.splice(point.id, 0, e.point.construct(point) );
+  //   return this;
+  // }
 
   addRandom(number) {
     const extend = { x: this.domain.x[1] - this.domain.x[0],

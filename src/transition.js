@@ -52,25 +52,25 @@ e.Transition = class {
   run(mode) {
     switch(mode) {
     case 'forward':
-      this.data = this.end.data;
+      this.svg.data = this.end.data;
       this.update();
       break;
     case 'fast-forward': {
       const duration = this.duration;
       this.duration = 0.5;
-      this.data = this.end.data;
+      this.svg.data = this.end.data;
       this.svg.update();
       this.duration = duration;
       break;
     }
     case 'backward':
-      this.data = this.start.data;
+      this.svg.data = this.start.data;
       this.update();
       break;
     case 'fast-backward': {
       const duration = this.duration;
       this.duration = 0.5;
-      this.data = this.start.data;
+      this.svg.data = this.start.data;
       this.svg.update();
       this.duration = duration;
       break;
