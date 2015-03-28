@@ -12770,6 +12770,14 @@ e.point.same = function (point1, point2) {
   return point1.x === point2.x && point1.y === point2.y && point1.id === point2.id;
 };
 
+e.point.ascendingId = function (point1, point2) {
+  return point1.id < point2.id ? -1 : point1.id > point2.id ? 1 : point1.id >= point2.id ? 0 : NaN;
+};
+
+e.point.descendingId = function (point1, point2) {
+  return point1.id > point2.id ? -1 : point1.id < point2.id ? 1 : point1.id <= point2.id ? 0 : NaN;
+};
+
 e.Set = (function () {
   var _class = function (set) {
     _classCallCheck(this, _class);
@@ -12778,7 +12786,7 @@ e.Set = (function () {
 
     this.values = set && set.values ? e.jsonClone(set.values) : [];
 
-    this.idFromPoint = set && set.idFromPoint ? e.jsonClone(set.idFromPoint) : [];
+    this.pointIdMap = set && set.pointIdMap ? e.jsonClone(set.pointIdMap) : [];
 
     this.name = set && set.name ? set.name // immutable
     : e.randomName(4);
@@ -12790,6 +12798,7 @@ e.Set = (function () {
       value: function cloneFrom(set) {
         this.domain = e.jsonClone(set.domain);
         this.values = e.jsonClone(set.values);
+        this.pointIdMap = e.jsonClone(set.pointIdMap);
         this.name = set.name; // immutable
 
         return this;
@@ -12801,39 +12810,61 @@ e.Set = (function () {
         return this;
       }
     },
-    createId: {
-      value: function createId() {}
+    getNextFreeId: {
+      value: function getNextFreeId(id) {
+        // id start at 1
+        while (id < 1 || typeof this.pointIdMap[id] === "number") {
+          ++id;
+        }
+        return id;
+      }
+    },
+    incrementPointId: {
+      value: function incrementPointId(point) {
+        var index = this.pointIdMap[point.id];
+        delete this.pointIdMap[point.id];
+        point.id = this.getNextFreeId(point.id + 1);
+        this.pointIdMap[point.id] = index;
+        return this;
+      }
+    },
+    getPreviousFreeId: {
+      value: function getPreviousFreeId(id) {
+        var i = id;
+        while (i > 1 && typeof this.pointIdMap[i] === "number") {
+          --i;
+        }
+        // id start at 1
+        if (i < 1 || typeof this.pointIdMap[i] === "number") {
+          i = this.getNextFreeId(id); // no space, revert
+        }
+        return i;
+      }
+    },
+    decrementPointId: {
+      value: function decrementPointId(point) {
+        var index = this.pointIdMap[point.id];
+        delete this.pointIdMap[point.id];
+        point.id = this.getPreviousFreeId(point.id - 1);
+        this.pointIdMap[point.id] = index;
+        return this;
+      }
     },
     addPoint: {
       value: function addPoint() {
         var point = arguments[0] === undefined ? {} : arguments[0];
 
         // start to increment from the last point
-        point.id = this.values.length > 0 ? this.values[this.values.length - 1].id + 1 : 1;
-        while (this.idFromPoint[point.id] !== undefined) {
-          ++point.id;
-        }
+        point.id = this.values.length > 0 ? this.values[this.values.length - 1].id + 1 : 1; // id start at 1
+        point.id = this.getNextFreeId(point.id);
 
-        var valueId = this.values.length;
-        this.idFromPoint[point.id] = valueId;
-        this.values[valueId] = e.point.construct(point);
+        var index = this.values.length;
+        this.pointIdMap[point.id] = index;
+        this.values[index] = e.point.construct(point);
         return this;
       }
     },
     addRandom: {
-
-      // changePointId(point, id) {
-      //   point.id = id;
-      //   for(
-
-      // }
-
-      // insertPoint(point = {}, Id = 0) {
-      //   point.id = Id || this.values.length;
-      //   this.values.splice(point.id, 0, e.point.construct(point) );
-      //   return this;
-      // }
-
       value: function addRandom(number) {
         var extend = { x: this.domain.x[1] - this.domain.x[0],
           y: this.domain.y[1] - this.domain.y[0] };
@@ -12842,6 +12873,17 @@ e.Set = (function () {
             y: Math.random() * extend.y + this.domain.y[0] });
         }
         return this;
+      }
+    },
+    removePoint: {
+      value: function removePoint(index) {
+        this.values.splice(index, 1);
+        var id = this.pointIdMap.findIndex(function (element) {
+          return element === index;
+        });
+        if (id >= 0 && id < this.pointIdMap.length) {
+          delete this.pointIdMap[id];
+        }
       }
     }
   });
@@ -12947,6 +12989,26 @@ e.SketchControl = (function () {
 
     this.$selection = this.parent.$selection.append("div").attr("class", "sketch-control").attr("id", this.id);
 
+    ///// preset
+    this.$preset = this.$selection.append("div").attr("class", "sketch-control-preset").attr("id", parent.id.replace(/.*-/, "sketch-preset-"));
+
+    this.$preset.append("button").attr("class", "sketch-control-element").classed("save", true).text("Save").on("click", function () {
+      _this.savePreset();
+    });
+
+    this.$presetList = this.$preset.append("select").attr("class", "sketch-control-element").classed("list", true).on("change", function () {
+      if (d3.event.defaultPrevented) {
+        debug("preset list change prevented");
+        return;
+      }
+      that.loadPreset(_this.$presetList.node().value);
+      d3.event.stopPropagation();
+    });
+
+    this.$preset.append("button").attr("class", "sketch-control-element").classed("delete", true).text("Delete").on("click", function () {
+      _this.deletePreset();
+    });
+
     ///// mode
     this.mode = null;
     this.$mode = this.$selection.append("div").attr("class", "sketch-control-mode");
@@ -12969,27 +13031,18 @@ e.SketchControl = (function () {
 
     this.setMode("add");
 
-    this.$modeAddOptions = this.$selection.append("div").attr("class", "add-options").style("display", this.mode === "add" ? null : "none");
+    ///// options
+    this.$modeOptions = this.$selection.append("div").attr("class", "mode-options");
+    // .style('display', this.mode === 'add' ? null : 'none')
 
-    ///// preset
-
-    this.$preset = this.$selection.append("div").attr("class", "sketch-control-preset").attr("id", parent.id.replace(/.*-/, "sketch-preset-"));
-
-    this.$preset.append("button").attr("class", "sketch-control-element").classed("save", true).text("Save").on("click", function () {
-      _this.savePreset();
+    this.$modeOptions.append("button").attr("class", "sketch-control-element").text("-").on("click", function () {
+      _this.parent.decrementSelectedId();
     });
 
-    this.$presetList = this.$preset.append("select").attr("class", "sketch-control-element").classed("list", true).on("change", function () {
-      if (d3.event.defaultPrevented) {
-        debug("preset list change prevented");
-        return;
-      }
-      that.loadPreset(_this.$presetList.node().value);
-      d3.event.stopPropagation();
-    });
+    this.$modeOptions.append("label").attr("class", "sketch-control-element").text("ID");
 
-    this.$preset.append("button").attr("class", "sketch-control-element").classed("delete", true).text("Delete").on("click", function () {
-      _this.deletePreset();
+    this.$modeOptions.append("button").attr("class", "sketch-control-element").text("+").on("click", function () {
+      _this.parent.incrementSelectedId();
     });
 
     this.updatePresetList();
@@ -13160,15 +13213,16 @@ e.SketchSVG = (function () {
 
     this.y = d3.scale.linear().domain(this.domain.y).range([0, this.height]);
 
-    this.colorScale = d3.scale.category20();
+    this.colorScale = d3.scale.category20().domain(d3.range(1, 99)); // fixed domain
 
     this.$selection = this.parent.$selection.append("g").attr("transform", "translate(0,0)") // margins
     .append("svg").attr("class", "sketch-svg").attr("id", this.parent.id.replace(/.*-/, "sketch-svg-")).attr("width", this.width).attr("height", this.height) // .attr('pointer-events', 'all')
     .on("click.svg", function () {
       if (d3.event.defaultPrevented) {
-        debug("svg click prevented");
+        debug("click.svg prevented");
         return;
       }
+      debug("click.svg");
 
       if (that.parent.control.mode === "add") {
         var _d3$mouse = d3.mouse(this);
@@ -13207,10 +13261,11 @@ e.SketchSVG = (function () {
     this.drag = d3.behavior.drag().origin(function (d) {
       return { x: that.x(d.x),
         y: that.y(d.y) };
-    }) // origin
-    .on("drag.svg", function (d) {
+    }).on("dragstart.svg", function () {
+      debug("dragstart.svg");
+    }).on("drag.svg", function (d) {
       if (d3.event.defaultPrevented) {
-        debug("svg click prevented");
+        debug("drag.svg prevented");
         return;
       }
 
@@ -13228,6 +13283,7 @@ e.SketchSVG = (function () {
       d3.event.sourceEvent.stopPropagation();
     }) // drag
     .on("dragend.svg", function () {
+      debug("dragend.svg");
       var $moved = d3.select(this);
       if ($moved.classed("selected")) {
         $moved = e.sistersSelectedSelection($moved);
@@ -13271,7 +13327,22 @@ e.SketchSVG = (function () {
           return d.id;
         });
 
-        $updated.transition().ease(this.parent.easeString || "linear").duration(this.parent.duration * 1000 || 10).attr("transform", function (d) {
+        $updated.style("fill", function (d) {
+          return that.colorScale(d.id);
+        }).style("stroke", function (d) {
+          return that.colorScale(d.id);
+        }).selectAll(".label")
+        // .text( function (d) { return (d.id).toString(); });
+        .text(function () {
+          return d3.select(this).node().parentNode.__data__.id.toString();
+        });
+
+        // .each( function(d) {
+        //   d3.select(this).selectAll('label')
+        //     .text(d.id.toString() );
+        // });
+
+        $updated.transition().ease(this.parent.easeString || "linear").duration(this.parent.duration * 1000 || 0).attr("transform", function (d) {
           return "translate(" + _this.x(d.x) + "," + _this.y(d.y) + ")";
         });
 
@@ -13285,9 +13356,10 @@ e.SketchSVG = (function () {
           return that.colorScale(d.id);
         }).style("stroke", function (d) {
           return that.colorScale(d.id);
-        }).on("click", function () {
+        }).on("click.svg", function () {
+          debug("click.svg");
           if (d3.event.defaultPrevented) {
-            debug("svg click prevented");
+            debug("click.svg prevented");
             return;
           }
 
@@ -13315,7 +13387,7 @@ e.SketchSVG = (function () {
                   });
 
                   if (index >= 0 && index < that.data.values.length) {
-                    that.data.values.splice(index, 1);
+                    that.data.removePoint(index);
                     // remove selection (which is index-based)
                     d3.select($deleted[0][s]).classed("selected", false);
                     updated = true;
@@ -13334,7 +13406,7 @@ e.SketchSVG = (function () {
           }
 
           d3.event.stopPropagation();
-        }) // circle clicked
+        }) // point clicked
 
         .call(this.drag).each(function (d, i, e) {
           debug("added %s, %, %s", d, i, e);
@@ -13344,11 +13416,15 @@ e.SketchSVG = (function () {
           $point.append("circle").attr("cx", 0).attr("cy", 0).attr("r", function () {
             // font-size must be a style attribute of point
             return parseFloat(d3.select(".point").style("font-size")) * 0.666666666666666; // circle around 2 digits
+          }).on("click.circle", function () {
+            debug("click.circle");
           });
 
-          $point.append("text").attr("class", "label").text(function (d) {
-            return d.id.toString();
-          }).attr("dy", "0.3333333333333333em"); // vertical centre
+          $point.append("text").attr("class", "label").attr("dy", "0.3333333333333333em") // vertical centre
+          .text(function () {
+            return d3.select(this).node().parentNode.__data__.id.toString();
+          });
+          // .text( function (d) { return (d.id).toString(); })
         });
       }
     },
@@ -13361,8 +13437,6 @@ e.SketchSVG = (function () {
         });
         if (this.brush.empty()) {
           debug("brush empty");
-          // d3.event.target.extent(d3.select(this.parentNode));
-          //  d3.select(this.parentNode).event(svgClick);
         } else {
           $point.classed("selected", function (d) {
             return d.x >= extent[0][0] && d.x <= extent[1][0] && d.y >= extent[0][1] && d.y <= extent[1][1];
@@ -13457,6 +13531,28 @@ e.Sketch = (function () {
 
         return this;
       }
+    },
+    incrementSelectedId: {
+      value: function incrementSelectedId() {
+        var _this = this;
+
+        this.svg.$selection.selectAll(".selected").sort(data.point.descendingId).each(function (d) {
+          _this.data.incrementPointId(d);
+        });
+        this.update();
+        return this;
+      }
+    },
+    decrementSelectedId: {
+      value: function decrementSelectedId() {
+        var _this = this;
+
+        this.svg.$selection.selectAll(".selected").sort(data.point.ascendingId).each(function (d) {
+          _this.data.decrementPointId(d);
+        });
+        this.update();
+        return this;
+      }
     }
   });
 
@@ -13507,7 +13603,8 @@ e.TransitionControl = (function () {
       _this.parent.run("fast-forward");
     });
 
-    this.$duration = this.$selection.append("input").attr("class", "transition-control-element").classed("duration", true).text("duration").attr("value", this.parent.duration).attr("type", "number").attr("step", "0.5").attr("min", "0").attr("max", "60").on("change", function () {
+    this.$duration = this.$selection.append("label").attr("class", "transition-control-element").text("duration:");
+    this.$duration.append("input").attr("class", "transition-control-element").classed("duration", true).attr("value", this.parent.duration).attr("type", "number").attr("step", "0.5").attr("min", "0").attr("max", "60").on("change", function () {
       that.parent.duration = that.$duration.node().value;
     });
 

@@ -47,11 +47,13 @@ line.grid-line {
 }
 
 .sketch-control-preset {
+    display: inline-flex;
+    vertical-align: center;
     float: right;
 }
 
 .sketch-control-element {
-    display: inline-block;
+    display: inline-flex;
     margin: 2px;
     border: 10px;
 }
@@ -59,6 +61,12 @@ line.grid-line {
 .sketch-control-element.selected {
     border: 1px solid black;
     background-color: transparent;
+}
+
+.mode-options {
+    border: 1px solid black;
+    display: inline-flex;
+    float: left;
 }
 
 .transition {
@@ -85,8 +93,16 @@ line.grid-line {
     border: 10px;
 }
 
-input.transition-control-element{
+label.transition-control-element {
+    font-size: small;
+}
+
+input.transition-control-element {
     width: 5em;
+}
+
+input.selected-id {
+    width: 4em;
 }
 
 .point {
@@ -100,6 +116,7 @@ input.transition-control-element{
 .point > text {
     fill: #000;
     stroke: #111;
+    pointer-events: none;
 }
 
 .point.selected {

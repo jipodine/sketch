@@ -30,6 +30,32 @@ e.point.same = function(point1, point2) {
     && point1.id === point2.id;
 };
 
+e.point.ascendingId = function(point1, point2) {
+  return (point1.id < point2.id
+          ? -1
+          : (point1.id > point2.id
+             ? 1
+             : (point1.id >= point2.id
+                ? 0
+                : NaN
+               )
+            )
+         );
+};
+
+e.point.descendingId = function(point1, point2) {
+  return (point1.id > point2.id
+          ? -1
+          : (point1.id < point2.id
+             ? 1
+             : (point1.id <= point2.id
+                ? 0
+                : NaN
+               )
+            )
+         );
+};
+
 e.Set = class {
   constructor(set) {
     this.domain = (set && set.domain
@@ -40,8 +66,8 @@ e.Set = class {
                    ? e.jsonClone(set.values)
                    : [] );
 
-    this.idFromPoint = (set && set.idFromPoint
-                   ? e.jsonClone(set.idFromPoint)
+    this.pointIdMap = (set && set.pointIdMap
+                   ? e.jsonClone(set.pointIdMap)
                    : [] );
 
     this.name = (set && set.name
@@ -53,6 +79,7 @@ e.Set = class {
   cloneFrom(set) {
     this.domain = e.jsonClone(set.domain);
     this.values = e.jsonClone(set.values);
+    this.pointIdMap = e.jsonClone(set.pointIdMap);
     this.name = set.name; // immutable
 
     return this;
@@ -63,38 +90,54 @@ e.Set = class {
     return this;
   }
 
-  createId() {
+  getNextFreeId(id) {
+    // id start at 1
+    while(id < 1 || typeof this.pointIdMap[id] === 'number') {
+      ++id;
+    }
+    return id;
+  }
 
+  incrementPointId(point) {
+    const index = this.pointIdMap[point.id];
+    delete this.pointIdMap[point.id];
+    point.id = this.getNextFreeId(point.id + 1);
+    this.pointIdMap[point.id] = index;
+    return this;
+  }
 
+  getPreviousFreeId(id) {
+    let i = id;
+    while(i > 1 && typeof this.pointIdMap[i] === 'number') {
+      --i;
+    }
+    // id start at 1
+    if(i < 1 || typeof this.pointIdMap[i] === 'number') {
+      i = this.getNextFreeId(id); // no space, revert
+    }
+    return i;
+  }
+
+  decrementPointId(point) {
+    const index = this.pointIdMap[point.id];
+    delete this.pointIdMap[point.id];
+    point.id = this.getPreviousFreeId(point.id - 1);
+    this.pointIdMap[point.id] = index;
+    return this;
   }
 
   addPoint(point = {} ) {
     // start to increment from the last point
     point.id = (this.values.length > 0
                 ? this.values[this.values.length - 1].id + 1
-                : 1);
-    while(this.idFromPoint[point.id] !== undefined) {
-      ++point.id;
-    }
+                : 1); // id start at 1
+    point.id = this.getNextFreeId(point.id);
 
-    const valueId = this.values.length;
-    this.idFromPoint[point.id] = valueId;
-    this.values[valueId] = e.point.construct(point);
+    const index = this.values.length;
+    this.pointIdMap[point.id] = index;
+    this.values[index] = e.point.construct(point);
     return this;
   }
-
-  // changePointId(point, id) {
-  //   point.id = id;
-  //   for(
-
-
-  // }
-
-  // insertPoint(point = {}, Id = 0) {
-  //   point.id = Id || this.values.length;
-  //   this.values.splice(point.id, 0, e.point.construct(point) );
-  //   return this;
-  // }
 
   addRandom(number) {
     const extend = { x: this.domain.x[1] - this.domain.x[0],
@@ -106,6 +149,15 @@ e.Set = class {
     return this;
   }
 
+  removePoint(index) {
+    this.values.splice(index, 1);
+    const id = this.pointIdMap.findIndex( (element) => {
+      return element === index;
+    });
+    if(id >= 0 && id < this.pointIdMap.length) {
+      delete this.pointIdMap[id];
+    }
+  }
 };
 
 

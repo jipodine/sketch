@@ -17,6 +17,35 @@ e.SketchControl = class {
       .attr('class', 'sketch-control')
       .attr('id', this.id);
 
+    ///// preset
+    this.$preset = this.$selection.append('div')
+      .attr('class', 'sketch-control-preset')
+      .attr('id', parent.id.replace(/.*-/, 'sketch-preset-'));
+
+    this.$preset.append('button')
+      .attr('class', 'sketch-control-element')
+      .classed('save', true)
+      .text('Save')
+      .on('click', () => { this.savePreset(); });
+
+    this.$presetList = this.$preset.append('select')
+      .attr('class', 'sketch-control-element')
+      .classed('list', true)
+      .on('change', () => {
+        if(d3.event.defaultPrevented) {
+          debug('preset list change prevented');
+          return;
+        }
+        that.loadPreset(this.$presetList.node().value);
+        d3.event.stopPropagation();
+      });
+
+    this.$preset.append('button')
+      .attr('class', 'sketch-control-element')
+      .classed('delete', true)
+      .text('Delete')
+      .on('click', () => { this.deletePreset(); });
+
     ///// mode
     this.mode = null;
     this.$mode = this.$selection.append('div')
@@ -48,39 +77,24 @@ e.SketchControl = class {
 
     this.setMode('add');
 
-    this.$modeAddOptions = this.$selection.append('div')
-      .attr('class', 'add-options')
-      .style('display', this.mode === 'add' ? null : 'none');
+    ///// options
+    this.$modeOptions = this.$selection.append('div')
+      .attr('class', 'mode-options');
+      // .style('display', this.mode === 'add' ? null : 'none')
 
-    ///// preset
-
-    this.$preset = this.$selection.append('div')
-      .attr('class', 'sketch-control-preset')
-      .attr('id', parent.id.replace(/.*-/, 'sketch-preset-'));
-
-    this.$preset.append('button')
+    this.$modeOptions.append('button')
       .attr('class', 'sketch-control-element')
-      .classed('save', true)
-      .text('Save')
-      .on('click', () => { this.savePreset(); });
+      .text('-')
+      .on('click', () => { this.parent.decrementSelectedId(); } );
 
-    this.$presetList = this.$preset.append('select')
+    this.$modeOptions.append('label')
       .attr('class', 'sketch-control-element')
-      .classed('list', true)
-      .on('change', () => {
-        if(d3.event.defaultPrevented) {
-          debug('preset list change prevented');
-          return;
-        }
-        that.loadPreset(this.$presetList.node().value);
-        d3.event.stopPropagation();
-      });
+      .text('ID');
 
-    this.$preset.append('button')
+    this.$modeOptions.append('button')
       .attr('class', 'sketch-control-element')
-      .classed('delete', true)
-      .text('Delete')
-      .on('click', () => { this.deletePreset(); });
+      .text('+')
+      .on('click', () => { this.parent.incrementSelectedId(); } );
 
     this.updatePresetList();
   }

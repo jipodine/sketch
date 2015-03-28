@@ -41,10 +41,13 @@ e.TransitionControl = class {
       .text('>>')
       .on('click', () => { this.parent.run('fast-forward'); });
 
-    this.$duration = this.$selection.append('input')
+    this.$duration = this.$selection.append('label')
+      .attr('class', 'transition-control-element')
+      .text('duration:');
+    this.$duration
+      .append('input')
       .attr('class', 'transition-control-element')
       .classed('duration', true)
-      .text('duration')
       .attr('value', this.parent.duration)
       .attr('type', 'number')
       .attr('step', '0.5')

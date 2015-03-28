@@ -24,7 +24,8 @@ e.SketchSVG = class {
       .domain(this.domain.y)
       .range([0, this.height]);
 
-    this.colorScale = d3.scale.category20();
+    this.colorScale = d3.scale.category20()
+      .domain(d3.range(1, 99) ); // fixed domain
 
     this.$selection = this.parent.$selection.append('g')
       .attr('transform', 'translate(0,0)') // margins
@@ -35,9 +36,10 @@ e.SketchSVG = class {
       .attr('height', this.height)    // .attr('pointer-events', 'all')
       .on('click.svg', function () {
         if(d3.event.defaultPrevented) {
-          debug('svg click prevented');
+          debug('click.svg prevented');
           return;
         }
+        debug('click.svg');
 
         if(that.parent.control.mode === 'add') {
           const [x, y] = d3.mouse(this);
@@ -93,10 +95,13 @@ e.SketchSVG = class {
       .origin(function(d) {
         return { x: that.x(d.x),
                  y: that.y(d.y) };
-      }) // origin
+      })
+      .on('dragstart.svg', function () {
+        debug('dragstart.svg');
+      })
       .on('drag.svg', function (d) {
         if(d3.event.defaultPrevented) {
-          debug('svg click prevented');
+          debug('drag.svg prevented');
           return;
         }
 
@@ -115,6 +120,7 @@ e.SketchSVG = class {
         d3.event.sourceEvent.stopPropagation();
       }) // drag
       .on('dragend.svg', function () {
+        debug('dragend.svg');
         let $moved = d3.select(this);
         if($moved.classed('selected') ) {
           $moved = e.sistersSelectedSelection($moved);
@@ -156,9 +162,17 @@ e.SketchSVG = class {
             });
 
     $updated
+      .style('fill', function(d) {return that.colorScale(d.id); })
+      .style('stroke', function(d) { return that.colorScale(d.id); })
+      .selectAll('.label')
+      .text( function () {
+        return d3.select(this).node().parentNode.__data__.id.toString();
+      });
+
+    $updated
       .transition()
       .ease(this.parent.easeString || 'linear')
-      .duration(this.parent.duration * 1000 || 10)
+      .duration(this.parent.duration * 1000 || 0)
       .attr('transform', (d) => {
         return 'translate(' + this.x(d.x) + ',' + this.y(d.y) + ')';
       });
@@ -177,9 +191,10 @@ e.SketchSVG = class {
       })
       .style('fill', function(d) { return that.colorScale(d.id); })
       .style('stroke', function(d) { return that.colorScale(d.id); })
-      .on('click', function () {
+      .on('click.svg', function () {
+        debug('click.svg');
         if(d3.event.defaultPrevented) {
-          debug('svg click prevented');
+          debug('click.svg prevented');
           return;
         }
 
@@ -206,7 +221,7 @@ e.SketchSVG = class {
             });
 
             if(index >= 0 && index < that.data.values.length) {
-              that.data.values.splice(index, 1);
+              that.data.removePoint(index);
               // remove selection (which is index-based)
               d3.select($deleted[0][s]).classed('selected', false);
               updated = true;
@@ -224,7 +239,7 @@ e.SketchSVG = class {
         }
 
         d3.event.stopPropagation();
-      }) // circle clicked
+      }) // point clicked
 
       .call(this.drag)
 
@@ -240,12 +255,17 @@ e.SketchSVG = class {
             // font-size must be a style attribute of point
             return parseFloat(d3.select('.point').style('font-size') )
               * 0.666666666666666; // circle around 2 digits
+          })
+          .on('click.circle', function () {
+            debug('click.circle');
           });
 
         $point.append('text')
           .attr('class', 'label')
-          .text( function (d) { return (d.id).toString(); })
-          .attr('dy', '0.3333333333333333em'); // vertical centre
+          .attr('dy', '0.3333333333333333em') // vertical centre
+          .text( function () {
+            return d3.select(this).node().parentNode.__data__.id.toString();
+          });
       });
 
   }
@@ -256,8 +276,6 @@ e.SketchSVG = class {
     $point.each(function(d) { d.selected = false; });
     if(this.brush.empty() ) {
       debug('brush empty');
-      // d3.event.target.extent(d3.select(this.parentNode));
-      //  d3.select(this.parentNode).event(svgClick);
     } else {
       $point.classed('selected', function(d) {
         return d.x >= extent[0][0] && d.x <= extent[1][0]
