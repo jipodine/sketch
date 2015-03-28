@@ -31,7 +31,7 @@ line.grid-line {
 
 .sketch {
     margin: 0;
-    width: 47.5%;
+    width: 47%;
     display: inline-table;
     float: initial;
         
@@ -47,11 +47,13 @@ line.grid-line {
 }
 
 .sketch-control-preset {
+    display: inline-flex;
+    vertical-align: center;
     float: right;
 }
 
 .sketch-control-element {
-    display: inline-block;
+    display: inline-flex;
     margin: 2px;
     border: 10px;
 }
@@ -61,10 +63,16 @@ line.grid-line {
     background-color: transparent;
 }
 
+.mode-options {
+    border: 1px solid black;
+    display: inline-flex;
+    float: left;
+}
+
 .transition {
     margin: 0;
-    width: 96%;
-    float: left;
+    width: 47%;
+    float: initial;
     display:inline-block;
         
 }
@@ -85,8 +93,16 @@ line.grid-line {
     border: 10px;
 }
 
-input.transition-control-element{
+label.transition-control-element {
+    font-size: small;
+}
+
+input.transition-control-element {
     width: 5em;
+}
+
+input.selected-id {
+    width: 4em;
 }
 
 .point {
@@ -100,6 +116,7 @@ input.transition-control-element{
 .point > text {
     fill: #000;
     stroke: #111;
+    pointer-events: none;
 }
 
 .point.selected {

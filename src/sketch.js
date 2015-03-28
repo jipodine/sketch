@@ -43,6 +43,26 @@ e.Sketch = class {
     return this;
   }
 
+  incrementSelectedId() {
+    this.svg.$selection.selectAll('.selected')
+      .sort(data.point.descendingId)
+      .each( (d) => {
+        this.data.incrementPointId(d);
+      } );
+    this.update();
+    return this;
+  }
+
+  decrementSelectedId() {
+    this.svg.$selection.selectAll('.selected')
+      .sort(data.point.ascendingId)
+      .each( (d) => {
+        this.data.decrementPointId(d);
+      } );
+    this.update();
+    return this;
+  }
+
 };
 
 

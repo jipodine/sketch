@@ -67,7 +67,7 @@ e.AppControl = class {
 
     const d = new Date();
     let name = (pjson.name + '_' + d.toLocaleString() )
-          .replace(/[:/.]/g, '-').replace(/ /g, '_')
+          .replace(/[:/.,]/g, '-').replace(/ /g, '_')
           + '.json';
     this.$exportLink.attr('href', url)
       .attr('download', name);

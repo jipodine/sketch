@@ -30,18 +30,41 @@ e.point.same = function(point1, point2) {
     && point1.id === point2.id;
 };
 
+e.point.ascendingId = function(point1, point2) {
+  return (point1.id < point2.id
+          ? -1
+          : (point1.id > point2.id
+             ? 1
+             : (point1.id >= point2.id
+                ? 0
+                : NaN
+               )
+            )
+         );
+};
+
+e.point.descendingId = function(point1, point2) {
+  return (point1.id > point2.id
+          ? -1
+          : (point1.id < point2.id
+             ? 1
+             : (point1.id <= point2.id
+                ? 0
+                : NaN
+               )
+            )
+         );
+};
+
 e.Set = class {
   constructor(set) {
     this.domain = (set && set.domain
                    ? e.jsonClone(set.domain)
                    : { x: [-1, 1], y: [-1, 1] } );
 
+    // always sorted by id
     this.values = (set && set.values
                    ? e.jsonClone(set.values)
-                   : [] );
-
-    this.idFromPoint = (set && set.idFromPoint
-                   ? e.jsonClone(set.idFromPoint)
                    : [] );
 
     this.name = (set && set.name
@@ -63,38 +86,57 @@ e.Set = class {
     return this;
   }
 
-  createId() {
+  getNextFreeId(id) {
+    // ensure that id start at 1
+    for(let i = 0; i < this.values.length; ++i) {
+      if(this.values[i].id === id) {
+        ++id;
+      }
+    }
+    return id;
+  }
 
+  incrementPointId(point) {
+    point.id = this.getNextFreeId(point.id + 1);
+    // always keep sorted
+    this.values.sort(e.point.ascendingId);
+    return this;
+  }
 
+  getPreviousFreeId(id) {
+    // ensure that id start at 1
+    let idMin = id;
+    for(let i = this.values.length - 1; i >= 0; --i) {
+      if(this.values[i].id === idMin) {
+        --idMin;
+      }
+    }
+    // not possible: go the other way
+    if(idMin < 1) {
+      idMin = this.getNextFreeId(id);
+    }
+    return idMin;
+  }
+
+  decrementPointId(point) {
+    this.removePoint(point); // we might need to go back there
+    point.id = this.getPreviousFreeId(point.id - 1);
+    this.values.push(e.point.construct(point) );
+    // always keep sorted
+    this.values.sort(e.point.ascendingId);
+    return this;
   }
 
   addPoint(point = {} ) {
     // start to increment from the last point
     point.id = (this.values.length > 0
                 ? this.values[this.values.length - 1].id + 1
-                : 1);
-    while(this.idFromPoint[point.id] !== undefined) {
-      ++point.id;
-    }
-
-    const valueId = this.values.length;
-    this.idFromPoint[point.id] = valueId;
-    this.values[valueId] = e.point.construct(point);
+                : 1); // id start at 1
+    point.id = this.getNextFreeId(point.id);
+    this.values.push(e.point.construct(point) );
+    this.values.sort(e.point.ascendingId);
     return this;
   }
-
-  // changePointId(point, id) {
-  //   point.id = id;
-  //   for(
-
-
-  // }
-
-  // insertPoint(point = {}, Id = 0) {
-  //   point.id = Id || this.values.length;
-  //   this.values.splice(point.id, 0, e.point.construct(point) );
-  //   return this;
-  // }
 
   addRandom(number) {
     const extend = { x: this.domain.x[1] - this.domain.x[0],
@@ -106,40 +148,60 @@ e.Set = class {
     return this;
   }
 
+  getPointIndex(point) {
+    const index = this.values.findIndex( (element) => {
+      return e.point.same(element, point);
+    });
+    return index;
+  }
+
+  removePointByIndex(index) {
+    this.values.splice(index, 1);
+    return this;
+  }
+
+  removePoint(point) {
+    this.removePointByIndex(this.getPointIndex(point));
+    return this;
+  }
+
 };
 
 
 e.Structure = class {
-  constructor(sets = {}) {
+  constructor(sets = []) {
     this.sets = sets;
   }
 
   addSet(set, name = set.name) {
-    this.sets[name] = new e.Set(set);
-    this.sets[name].name = name;
-    return this;
-  }
-
-  addSetByReference(set) {
-    this.sets[set.name] = set;
+    let s = new e.Set(set);
+    s.name = name;
+    this.sets.push(s);
     return this;
   }
 
   getSetByName(name) {
-    return this.sets[name];
+    const index = this.sets.findIndex( function(element) {
+      return element.name === name;
+    } );
+    return this.sets[index];
   }
 
   removeSetByName(name) {
-    delete this.sets[name];
+    const index = this.sets.findIndex( function(element) {
+      return element.name === name;
+    } );
+    if(index >= 0) {
+      this.sets.splice(index, 1);
+    }
     return this;
   }
 
   nameExists(name) {
-    return this.sets.hasOwnProperty(name);
-  }
-
-  getSetNames() {
-    return Object.keys(this.sets);
+    const index = this.sets.findIndex( function(element) {
+      return element.name === name;
+    } );
+    return index >= 0;
   }
 
 };
