@@ -84,12 +84,21 @@ e.AppControl = class {
       reader.onload = () => {
         //TODO: handle version
         const i = JSON.parse(reader.result);
+
         const sets = i.structure.sets;
-        for(var k in sets) {
+        for(let k in sets) {
           if(sets.hasOwnProperty(k) ) {
             this.parent.structure.addSet(sets[k]);
           }
         }
+
+        const transitions = i.structure.transitions;
+        for(let k in transitions) {
+          if(transitions.hasOwnProperty(k) ) {
+            this.parent.structure.addSetTransition(transitions[k]);
+          }
+        }
+
         this.update();
       };
       reader.readAsText(file);

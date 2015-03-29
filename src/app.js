@@ -45,6 +45,7 @@ app.$selection = d3.select('body');
 // loop    app.control1.update();
     app.sketch1.update();
     app.sketch2.update();
+    app.transition12.update();
   };
 
 

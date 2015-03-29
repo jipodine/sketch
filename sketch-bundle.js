@@ -12546,7 +12546,7 @@ function plural(ms, n, name) {
 },{}],10:[function(require,module,exports){
 module.exports={
   "name": "sketch",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "",
   "main": "sketch-main.js",
   "scripts": {
@@ -12650,12 +12650,21 @@ e.AppControl = (function () {
             reader.onload = function () {
               //TODO: handle version
               var i = JSON.parse(reader.result);
+
               var sets = i.structure.sets;
               for (var k in sets) {
                 if (sets.hasOwnProperty(k)) {
                   _this.parent.structure.addSet(sets[k]);
                 }
               }
+
+              var transitions = i.structure.transitions;
+              for (var k in transitions) {
+                if (transitions.hasOwnProperty(k)) {
+                  _this.parent.structure.addSetTransition(transitions[k]);
+                }
+              }
+
               _this.update();
             };
             reader.readAsText(file);
@@ -12722,6 +12731,7 @@ app.init = function () {
     // loop    app.control1.update();
     app.sketch1.update();
     app.sketch2.update();
+    app.transition12.update();
   };
 }; // init
 
@@ -12784,12 +12794,8 @@ e.Set = (function () {
 
     this.domain = set && set.domain ? e.jsonClone(set.domain) : { x: [-1, 1], y: [-1, 1] };
 
-    // sorted by id
+    // always sorted by id
     this.values = set && set.values ? e.jsonClone(set.values) : [];
-
-    // this.pointIdMap = (set && set.pointIdMap
-    //                ? e.jsonClone(set.pointIdMap)
-    //                : [] );
 
     this.name = set && set.name ? set.name // immutable
     : e.randomName(4);
@@ -12801,7 +12807,6 @@ e.Set = (function () {
       value: function cloneFrom(set) {
         this.domain = e.jsonClone(set.domain);
         this.values = e.jsonClone(set.values);
-        // this.pointIdMap = e.jsonClone(set.pointIdMap);
         this.name = set.name; // immutable
 
         return this;
@@ -12822,11 +12827,6 @@ e.Set = (function () {
           }
         }
         return id;
-
-        // while(id < 1 || typeof this.pointIdMap[id] === 'number') {
-        //   ++id;
-        // }
-        // return id;
       }
     },
     incrementPointId: {
@@ -12835,12 +12835,6 @@ e.Set = (function () {
         // always keep sorted
         this.values.sort(e.point.ascendingId);
         return this;
-
-        // const index = this.pointIdMap[point.id];
-        // delete this.pointIdMap[point.id];
-        // point.id = this.getNextFreeId(point.id + 1);
-        // this.pointIdMap[point.id] = index;
-        // return this;
       }
     },
     getPreviousFreeId: {
@@ -12852,37 +12846,21 @@ e.Set = (function () {
             --idMin;
           }
         }
-        // ensure that id start at 1
+        // not possible: go the other way
         if (idMin < 1) {
           idMin = this.getNextFreeId(id);
         }
         return idMin;
-
-        // let i = id;
-        // while(i > 1 && typeof this.pointIdMap[i] === 'number') {
-        //   --i;
-        // }
-        // // id start at 1
-        // if(i < 1 || typeof this.pointIdMap[i] === 'number') {
-        //   i = this.getNextFreeId(id); // no space, revert
-        // }
-        // return i;
       }
     },
     decrementPointId: {
       value: function decrementPointId(point) {
-        this.removePoint(point);
+        this.removePoint(point); // we might need to go back there
         point.id = this.getPreviousFreeId(point.id - 1);
         this.values.push(e.point.construct(point));
         // always keep sorted
         this.values.sort(e.point.ascendingId);
         return this;
-
-        // const index = this.pointIdMap[point.id];
-        // delete this.pointIdMap[point.id];
-        // point.id = this.getPreviousFreeId(point.id - 1);
-        // this.pointIdMap[point.id] = index;
-        // return this;
       }
     },
     addPoint: {
@@ -12892,12 +12870,8 @@ e.Set = (function () {
         // start to increment from the last point
         point.id = this.values.length > 0 ? this.values[this.values.length - 1].id + 1 : 1; // id start at 1
         point.id = this.getNextFreeId(point.id);
-
         this.values.push(e.point.construct(point));
         this.values.sort(e.point.ascendingId);
-        // const index = this.values.length;
-        // this.pointIdMap[point.id] = index;
-        // this.values[index] = e.point.construct(point);
         return this;
       }
     },
@@ -12924,12 +12898,6 @@ e.Set = (function () {
       value: function removePointByIndex(index) {
         this.values.splice(index, 1);
         return this;
-        // const id = this.pointIdMap.findIndex( (element) => {
-        //   return element === index;
-        // });
-        // if(id >= 0 && id < this.pointIdMap.length) {
-        //   delete this.pointIdMap[id];
-        // }
       }
     },
     removePoint: {
@@ -12941,18 +12909,57 @@ e.Set = (function () {
   });
 
   return _class;
-})();
+})(); // set
 
-e.Structure = (function () {
-  var _class2 = function () {
-    var sets = arguments[0] === undefined ? [] : arguments[0];
-
+e.SetTransition = (function () {
+  var _class2 = function (transition) {
     _classCallCheck(this, _class2);
 
-    this.sets = sets;
+    this.name = transition && transition.name ? transition.name // immutable
+    : e.randomName(5);
+    this.start = transition && transition.start ? new e.Set(transition.start) : new e.Set();
+    this.end = transition && transition.end ? new e.Set(transition.end) : new e.Set();
+    this.duration = transition && transition.duration ? transition.duration : 0;
+
+    this.setEaseStyle(transition && transition.easeStyle ? transition.easeStyle : "cubic", transition && transition.easeStyleExtention ? transition.easeStyleExtention : "in-out");
   };
 
   _createClass(_class2, {
+    setEaseStyle: {
+      value: function setEaseStyle(style, extension) {
+        this.easeStyle = style || this.easeStyle;
+        this.easeStyleExtension = extension || this.easeStyleExtension;
+        this.easeString = this.easeStyle + "-" + this.easeStyleExtension;
+
+        return this;
+      }
+    },
+    cloneFrom: {
+      value: function cloneFrom(transition) {
+        this.name = transition.name; // immutable
+        this.start.cloneFrom(transition.start);
+        this.end.cloneFrom(transition.end);
+        this.duration = transition.duration;
+
+        return this;
+      }
+    }
+  });
+
+  return _class2;
+})();
+
+e.Structure = (function () {
+  var _class3 = function () {
+    var params = arguments[0] === undefined ? {} : arguments[0];
+
+    _classCallCheck(this, _class3);
+
+    this.sets = params.sets || [];
+    this.transitions = params.transitions || [];
+  };
+
+  _createClass(_class3, {
     addSet: {
       value: function addSet(set) {
         var _this = this;
@@ -12985,9 +12992,49 @@ e.Structure = (function () {
         return this;
       }
     },
-    nameExists: {
-      value: function nameExists(name) {
+    setNameExists: {
+      value: function setNameExists(name) {
         var index = this.sets.findIndex(function (element) {
+          return element.name === name;
+        });
+        return index >= 0;
+      }
+    },
+    addSetTransition: {
+      value: function addSetTransition(transition) {
+        var _this = this;
+
+        var name = arguments[1] === undefined ? transition.name : arguments[1];
+        return (function () {
+          var s = new e.SetTransition(transition);
+          s.name = name;
+          _this.transitions.push(s);
+          return _this;
+        })();
+      }
+    },
+    getSetTransitionByName: {
+      value: function getSetTransitionByName(name) {
+        var index = this.transitions.findIndex(function (element) {
+          return element.name === name;
+        });
+        return this.transitions[index];
+      }
+    },
+    removeSetTransitionByName: {
+      value: function removeSetTransitionByName(name) {
+        var index = this.transitions.findIndex(function (element) {
+          return element.name === name;
+        });
+        if (index >= 0) {
+          this.transitions.splice(index, 1);
+        }
+        return this;
+      }
+    },
+    setTransitionNameExists: {
+      value: function setTransitionNameExists(name) {
+        var index = this.transitions.findIndex(function (element) {
           return element.name === name;
         });
         return index >= 0;
@@ -12995,8 +13042,8 @@ e.Structure = (function () {
     }
   });
 
-  return _class2;
-})();
+  return _class3;
+})(); // structure
 
 // no function here
 e.jsonClone = function (jsonObject) {
@@ -13132,7 +13179,7 @@ e.SketchControl = (function () {
     deletePreset: {
       value: function deletePreset() {
         var name = window.prompt("Really delete ?", this.parent.data.name);
-        if (name && this.structure.nameExists(name)) {
+        if (name && this.structure.setNameExists(name)) {
           debug("%s deleted", name);
           this.structure.removeSetByName(name);
           this.updatePresetList();
@@ -13144,7 +13191,7 @@ e.SketchControl = (function () {
     savePreset: {
       value: function savePreset() {
         var name = window.prompt("Name", this.parent.data.name);
-        if (name && (!this.structure.nameExists(name) || window.confirm("Update " + name + "?"))) {
+        if (name && (!this.structure.setNameExists(name) || window.confirm("Update " + name + "?"))) {
           debug("%s saved", name);
           this.structure.addSet(this.parent.data, name);
 
@@ -13390,7 +13437,7 @@ e.SketchSVG = (function () {
           return d3.select(this).node().parentNode.__data__.id.toString();
         });
 
-        $updated.transition().ease(this.parent.easeString || "linear").duration(this.parent.duration * 1000 || 0).attr("transform", function (d) {
+        $updated.transition().ease(this.parent.transition ? this.parent.transition.easeString : "linear").duration(this.parent.transition ? this.parent.transition.duration * 1000 : 0).attr("transform", function (d) {
           return "translate(" + _this.x(d.x) + "," + _this.y(d.y) + ")";
         });
 
@@ -13616,7 +13663,7 @@ var _createClass = (function () { function defineProperties(target, props) { for
 var _classCallCheck = function (instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } };
 
 var d3 = require("d3");
-var debug = require("debug")("sketch:transition:control");
+var debug = require("debug")("transition:transition:control");
 
 var e = {};
 
@@ -13634,6 +13681,26 @@ e.TransitionControl = (function () {
 
     this.$selection = this.parent.$selection.append("div").attr("class", "transition-control").attr("id", this.id);
 
+    ///// preset
+    this.$preset = this.$selection.append("div").attr("class", "transition-control-preset").attr("id", parent.id.replace(/.*-/, "transition-preset-"));
+
+    this.$preset.append("button").attr("class", "transition-control-element").classed("save", true).text("Save").on("click", function () {
+      _this.savePreset();
+    });
+
+    this.$presetList = this.$preset.append("select").attr("class", "transition-control-element").classed("list", true).on("change", function () {
+      if (d3.event.defaultPrevented) {
+        debug("preset list change prevented");
+        return;
+      }
+      that.loadPreset(_this.$presetList.node().value);
+      d3.event.stopPropagation();
+    });
+
+    this.$preset.append("button").attr("class", "transition-control-element").classed("delete", true).text("Delete").on("click", function () {
+      _this.deletePreset();
+    });
+
     this.$selection.append("button").attr("class", "transition-control-element").classed("fast-backward", true).text("<<").on("click", function () {
       _this.parent.run("fast-backward");
     });
@@ -13650,9 +13717,9 @@ e.TransitionControl = (function () {
       _this.parent.run("fast-forward");
     });
 
-    this.$duration = this.$selection.append("label").attr("class", "transition-control-element").text("duration:");
-    this.$duration.append("input").attr("class", "transition-control-element").classed("duration", true).attr("value", this.parent.duration).attr("type", "number").attr("step", "0.5").attr("min", "0").attr("max", "60").on("change", function () {
-      that.parent.duration = that.$duration.node().value;
+    this.$selection.append("label").attr("class", "transition-control-element").text("duration:");
+    this.$duration = this.$selection.append("input").attr("class", "transition-control-element").classed("duration", true).attr("value", this.parent.transition.duration).attr("type", "number").attr("step", "0.5").attr("min", "0").attr("max", "60").on("change", function () {
+      that.parent.transition.duration = that.$duration.node().value;
     });
 
     var easeStyleStrings = ["linear", "cubic", "quad", "sin", "exp", "circle", "elastic", "back", "bounce"];
@@ -13685,15 +13752,101 @@ e.TransitionControl = (function () {
       this.$easeStyleExtension.append("option").attr("value", easeStyleExtensionStrings[i]).text(easeStyleExtensionStrings[i]);
     }
 
+    this.updatePresetList();
     this.update();
   };
 
   _createClass(_class, {
+    deletePreset: {
+      value: function deletePreset() {
+        var name = window.prompt("Really delete ?", this.parent.transition.name);
+        if (name && this.structure.setTransitionNameExists(name)) {
+          debug("%s deleted", name);
+          this.structure.removeSetTransitionByName(name);
+          this.updatePresetList();
+        }
+
+        return this;
+      }
+    },
+    savePreset: {
+      value: function savePreset() {
+        var name = window.prompt("Name", this.parent.transition.name);
+        if (name && (!this.structure.setTransitionNameExists(name) || window.confirm("Update " + name + "?"))) {
+          debug("%s saved", name);
+          this.parent.transition.start.cloneFrom(this.parent.sketchStart.data);
+          this.parent.transition.end.cloneFrom(this.parent.sketchEnd.data);
+          this.structure.addSetTransition(this.parent.transition, name);
+
+          // update all, including self
+          this.parent.top.update();
+
+          this.loadPreset(name);
+        }
+
+        return this;
+      }
+    },
+    loadPreset: {
+      value: function loadPreset(name) {
+        debug("load preset: %s", name);
+        var transition = this.structure.getSetTransitionByName(name);
+        if (transition) {
+          this.parent.transition.cloneFrom(transition);
+          this.parent.sketchStart.data.cloneFrom(this.parent.transition.start);
+          this.parent.sketchStart.update();
+          this.parent.sketchEnd.data.cloneFrom(this.parent.transition.end);
+          this.parent.sketchEnd.update();
+          this.$presetList.node().value = name;
+          this.parent.update();
+        } else {
+          console.log("Unknown preset " + name);
+        }
+
+        return this;
+      }
+    },
     update: {
       value: function update() {
-        this.$duration.attr("value", this.parent.duration);
-        this.$easeStyle.node().value = this.parent.easeStyle;
-        this.$easeStyleExtension.node().value = this.parent.easeStyleExtension;
+        this.updatePresetList();
+
+        this.$duration.attr("value", this.parent.transition.duration);
+        this.$easeStyle.node().value = this.parent.transition.easeStyle;
+        this.$easeStyleExtension.node().value = this.parent.transition.easeStyleExtension;
+        return this;
+      }
+    },
+    updatePresetList: {
+      value: function updatePresetList() {
+        var that = this;
+
+        // update
+        var $updated = this.$presetList.selectAll("option").data(this.structure.transitions, function (d) {
+          return d.name;
+        }).attr("value", function (d) {
+          return d.name;
+        }).text(function (d) {
+          return d.name;
+        });
+
+        // exit
+        $updated.exit().remove();
+
+        // enter
+        $updated.enter().append("option").attr("value", function (d) {
+          return d.name;
+        }).text(function (d) {
+          return d.name;
+        }).on("click", function (d) {
+          if (d3.event.defaultPrevented) {
+            debug("preset list click prevented");
+            return;
+          }
+
+          that.loadPreset(d.name);
+          d3.event.stopPropagation();
+        });
+
         return this;
       }
     }
@@ -13766,20 +13919,20 @@ e.Transition = (function () {
     this.domain = params.domain;
     this.data = new data.Set();
     this.id = "transition-" + e.Transition.count;
-    this.$selection = this.$parent.append("div").attr("class", "transition").attr("id", this.id);
-    this.start = params.start;
-    this.end = params.end;
 
-    this.duration = 2;
-    this.easeStyle = "cubic";
-    this.easeStyleExtension = "in-out";
-    this.easeString = this.easeStyle + "-" + this.easeStyleExtension;
+    this.transition = new data.SetTransition({ duration: 2,
+      easeStyle: "cubic",
+      easeStyleExtension: "in-out" });
+
+    this.sketchStart = params.start;
+    this.sketchEnd = params.end;
+
+    this.$selection = this.$parent.append("div").attr("class", "transition").attr("id", this.id);
 
     this.control = new control.TransitionControl(this);
 
     var svgWidth = this.$selection.node().clientWidth;
     var svgHeight = Math.floor(svgWidth * (this.domain.y[1] - this.domain.y[0]) / (this.domain.x[1] - this.domain.x[0]));
-
     this.svg = new svg.TransitionSVG(this, svgWidth, svgHeight);
   };
 
@@ -13796,41 +13949,32 @@ e.Transition = (function () {
       value: function run(mode) {
         switch (mode) {
           case "forward":
-            this.svg.data = this.end.data;
+            this.svg.data = this.sketchEnd.data;
             this.update();
             break;
           case "fast-forward":
             {
-              var duration = this.duration;
-              this.duration = 0.5;
-              this.svg.data = this.end.data;
+              var duration = this.transition.duration;
+              this.transition.duration = 0.5;
+              this.svg.data = this.sketchEnd.data;
               this.svg.update();
-              this.duration = duration;
+              this.transition.duration = duration;
               break;
             }
           case "backward":
-            this.svg.data = this.start.data;
+            this.svg.data = this.sketchStart.data;
             this.update();
             break;
           case "fast-backward":
             {
-              var duration = this.duration;
-              this.duration = 0.5;
-              this.svg.data = this.start.data;
+              var duration = this.transition.duration;
+              this.transition.duration = 0.5;
+              this.svg.data = this.sketchStart.data;
               this.svg.update();
-              this.duration = duration;
+              this.transition.duration = duration;
               break;
             }
         }
-
-        return this;
-      }
-    },
-    setEaseStyle: {
-      value: function setEaseStyle(style, extension) {
-        this.easeStyle = style || this.easeStyle;
-        this.easeStyleExtension = extension || this.easeStyleExtension;
-        this.easeString = this.easeStyle + "-" + this.easeStyleExtension;
 
         return this;
       }
