@@ -12546,7 +12546,7 @@ function plural(ms, n, name) {
 },{}],10:[function(require,module,exports){
 module.exports={
   "name": "sketch",
-  "version": "0.1.0",
+  "version": "0.2.2",
   "description": "",
   "main": "sketch-main.js",
   "scripts": {
@@ -12683,6 +12683,8 @@ module.exports = exports = e;
 var debug = require("debug")("sketch:app");
 var d3 = require("d3");
 
+// in case page was saved, and reloaded
+document.querySelector("#sketch-app").innerHTML = "";
 var app = window.app || {};
 
 app.polyfills = require("./polyfills.js");
@@ -12699,20 +12701,20 @@ var set = new app.data.Set({ name: "random", domain: app.domain }).addRandom(10)
 app.structure.addSet(set);
 
 app.init = function () {
-  app.$selection = d3.select("body");
+  app.$selection = d3.select("#sketch-app");
   app.control1 = new app.control.AppControl(app, "app-control-1");
 
   app.sketch1 = new app.sketch.Sketch({ top: app,
-    $parent: d3.select("body"),
+    $parent: app.$selection,
     structure: app.structure,
     domain: app.domain });
 
   app.sketch2 = new app.sketch.Sketch({ top: app,
-    $parent: d3.select("body"),
+    $parent: app.$selection,
     structure: app.structure,
     domain: app.domain });
   app.transition12 = new app.transition.Transition({ top: app,
-    $parent: d3.select("body"),
+    $parent: app.$selection,
     structure: app.structure,
     domain: app.domain,
     start: app.sketch1,
@@ -12784,12 +12786,8 @@ e.Set = (function () {
 
     this.domain = set && set.domain ? e.jsonClone(set.domain) : { x: [-1, 1], y: [-1, 1] };
 
-    // sorted by id
+    // always sorted by id
     this.values = set && set.values ? e.jsonClone(set.values) : [];
-
-    // this.pointIdMap = (set && set.pointIdMap
-    //                ? e.jsonClone(set.pointIdMap)
-    //                : [] );
 
     this.name = set && set.name ? set.name // immutable
     : e.randomName(4);
@@ -12801,7 +12799,6 @@ e.Set = (function () {
       value: function cloneFrom(set) {
         this.domain = e.jsonClone(set.domain);
         this.values = e.jsonClone(set.values);
-        // this.pointIdMap = e.jsonClone(set.pointIdMap);
         this.name = set.name; // immutable
 
         return this;
@@ -12822,11 +12819,6 @@ e.Set = (function () {
           }
         }
         return id;
-
-        // while(id < 1 || typeof this.pointIdMap[id] === 'number') {
-        //   ++id;
-        // }
-        // return id;
       }
     },
     incrementPointId: {
@@ -12835,12 +12827,6 @@ e.Set = (function () {
         // always keep sorted
         this.values.sort(e.point.ascendingId);
         return this;
-
-        // const index = this.pointIdMap[point.id];
-        // delete this.pointIdMap[point.id];
-        // point.id = this.getNextFreeId(point.id + 1);
-        // this.pointIdMap[point.id] = index;
-        // return this;
       }
     },
     getPreviousFreeId: {
@@ -12852,37 +12838,21 @@ e.Set = (function () {
             --idMin;
           }
         }
-        // ensure that id start at 1
+        // not possible: go the other way
         if (idMin < 1) {
           idMin = this.getNextFreeId(id);
         }
         return idMin;
-
-        // let i = id;
-        // while(i > 1 && typeof this.pointIdMap[i] === 'number') {
-        //   --i;
-        // }
-        // // id start at 1
-        // if(i < 1 || typeof this.pointIdMap[i] === 'number') {
-        //   i = this.getNextFreeId(id); // no space, revert
-        // }
-        // return i;
       }
     },
     decrementPointId: {
       value: function decrementPointId(point) {
-        this.removePoint(point);
+        this.removePoint(point); // we might need to go back there
         point.id = this.getPreviousFreeId(point.id - 1);
         this.values.push(e.point.construct(point));
         // always keep sorted
         this.values.sort(e.point.ascendingId);
         return this;
-
-        // const index = this.pointIdMap[point.id];
-        // delete this.pointIdMap[point.id];
-        // point.id = this.getPreviousFreeId(point.id - 1);
-        // this.pointIdMap[point.id] = index;
-        // return this;
       }
     },
     addPoint: {
@@ -12892,12 +12862,8 @@ e.Set = (function () {
         // start to increment from the last point
         point.id = this.values.length > 0 ? this.values[this.values.length - 1].id + 1 : 1; // id start at 1
         point.id = this.getNextFreeId(point.id);
-
         this.values.push(e.point.construct(point));
         this.values.sort(e.point.ascendingId);
-        // const index = this.values.length;
-        // this.pointIdMap[point.id] = index;
-        // this.values[index] = e.point.construct(point);
         return this;
       }
     },
@@ -12924,12 +12890,6 @@ e.Set = (function () {
       value: function removePointByIndex(index) {
         this.values.splice(index, 1);
         return this;
-        // const id = this.pointIdMap.findIndex( (element) => {
-        //   return element === index;
-        // });
-        // if(id >= 0 && id < this.pointIdMap.length) {
-        //   delete this.pointIdMap[id];
-        // }
       }
     },
     removePoint: {
