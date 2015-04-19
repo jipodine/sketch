@@ -12546,7 +12546,7 @@ function plural(ms, n, name) {
 },{}],10:[function(require,module,exports){
 module.exports={
   "name": "sketch",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "",
   "main": "sketch-main.js",
   "scripts": {
@@ -12850,7 +12850,7 @@ e.Set = (function () {
         }
         // not possible: go the other way
         if (idMin < 1) {
-          idMin = this.getNextFreeId(id);
+          idMin = this.getNextFreeId(1);
         }
         return idMin;
       }

@@ -113,7 +113,7 @@ e.Set = class {
     }
     // not possible: go the other way
     if(idMin < 1) {
-      idMin = this.getNextFreeId(id);
+      idMin = this.getNextFreeId(1);
     }
     return idMin;
   }
