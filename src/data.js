@@ -113,7 +113,7 @@ e.Set = class {
     }
     // not possible: go the other way
     if(idMin < 1) {
-      idMin = this.getNextFreeId(id);
+      idMin = this.getNextFreeId(1);
     }
     return idMin;
   }
@@ -165,12 +165,58 @@ e.Set = class {
     return this;
   }
 
+}; // set
+
+e.SetTransition = class {
+  constructor(transition) {
+    this.name = (transition && transition.name
+                 ? transition.name // immutable
+                 : e.randomName(5) );
+    this.start = (transition && transition.start
+                  ? new e.Set(transition.start)
+                  : new e.Set() );
+    this.end = (transition && transition.end
+                ? new e.Set(transition.end)
+                : new e.Set() );
+    this.duration = (transition && transition.duration
+                     ? transition.duration
+                     : 0);
+
+    this.setEaseStyle( (transition && transition.easeStyle
+                        ? transition.easeStyle
+                        : 'cubic'),
+                       (transition && transition.easeStyleExtention
+                        ? transition.easeStyleExtention
+                        : 'in-out') );
+  }
+
+  setEaseStyle(style, extension) {
+    this.easeStyle = style
+      || this.easeStyle;
+    this.easeStyleExtension = extension
+      || this.easeStyleExtension;
+    this.easeString = this.easeStyle
+      + '-' + this.easeStyleExtension;
+
+    return this;
+  }
+
+
+  cloneFrom(transition) {
+    this.name = transition.name; // immutable
+    this.start.cloneFrom(transition.start);
+    this.end.cloneFrom(transition.end);
+    this.duration = transition.duration;
+
+    return this;
+  }
+
 };
 
-
 e.Structure = class {
-  constructor(sets = []) {
-    this.sets = sets;
+  constructor(params = {}) {
+    this.sets = params.sets || [];
+    this.transitions = params.transitions || [];
   }
 
   addSet(set, name = set.name) {
@@ -197,14 +243,46 @@ e.Structure = class {
     return this;
   }
 
-  nameExists(name) {
+  setNameExists(name) {
     const index = this.sets.findIndex( function(element) {
       return element.name === name;
     } );
     return index >= 0;
   }
 
-};
+  addSetTransition(transition, name = transition.name) {
+    let s = new e.SetTransition(transition);
+    s.name = name;
+    this.transitions.push(s);
+    return this;
+  }
+
+  getSetTransitionByName(name) {
+    const index = this.transitions.findIndex( function(element) {
+      return element.name === name;
+    } );
+    return this.transitions[index];
+  }
+
+  removeSetTransitionByName(name) {
+    const index = this.transitions.findIndex( function(element) {
+      return element.name === name;
+    } );
+    if(index >= 0) {
+      this.transitions.splice(index, 1);
+    }
+    return this;
+  }
+
+  setTransitionNameExists(name) {
+    const index = this.transitions.findIndex( function(element) {
+      return element.name === name;
+    } );
+    return index >= 0;
+  }
+
+
+}; // structure
 
 // no function here
 e.jsonClone = function(jsonObject) {

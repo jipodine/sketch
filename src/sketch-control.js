@@ -128,7 +128,7 @@ e.SketchControl = class {
 
   deletePreset() {
     const name = window.prompt('Really delete ?', this.parent.data.name);
-    if(name && this.structure.nameExists(name) ) {
+    if(name && this.structure.setNameExists(name) ) {
       debug('%s deleted', name);
       this.structure.removeSetByName(name);
       this.updatePresetList();
@@ -140,7 +140,7 @@ e.SketchControl = class {
   savePreset() {
     const name = window.prompt('Name', this.parent.data.name);
     if(name
-       && (!this.structure.nameExists(name)
+       && (!this.structure.setNameExists(name)
            || window.confirm('Update ' + name + '?') ) ) {
       debug('%s saved', name);
       this.structure.addSet(this.parent.data, name);
@@ -204,7 +204,6 @@ e.SketchControl = class {
       });
 
     return this;
-
   }
 
 

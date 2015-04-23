@@ -171,8 +171,12 @@ e.SketchSVG = class {
 
     $updated
       .transition()
-      .ease(this.parent.easeString || 'linear')
-      .duration(this.parent.duration * 1000 || 0)
+      .ease( (this.parent.transition
+              ? this.parent.transition.easeString
+              : 'linear') )
+      .duration( (this.parent.transition
+                  ? this.parent.transition.duration * 1000
+                  : 0) )
       .attr('transform', (d) => {
         return 'translate(' + this.x(d.x) + ',' + this.y(d.y) + ')';
       });

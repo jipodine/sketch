@@ -47,6 +47,7 @@ app.$selection = d3.select('#sketch-app');
 // loop    app.control1.update();
     app.sketch1.update();
     app.sketch2.update();
+    app.transition12.update();
   };
 
 

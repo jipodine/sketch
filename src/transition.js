@@ -22,23 +22,23 @@ e.Transition = class {
     this.domain = params.domain;
     this.data = new data.Set();
     this.id = 'transition-' + e.Transition.count;
+
+    this.transition = new data.SetTransition( { duration: 2,
+                                                easeStyle: 'cubic',
+                                                easeStyleExtension: 'in-out' } );
+
+    this.sketchStart = params.start;
+    this.sketchEnd = params.end;
+
     this.$selection = this.$parent.append('div')
       .attr('class', 'transition')
       .attr('id', this.id);
-    this.start = params.start;
-    this.end = params.end;
-
-    this.duration = 2;
-    this.easeStyle = 'cubic';
-    this.easeStyleExtension = 'in-out';
-    this.easeString = this.easeStyle + '-' + this.easeStyleExtension;
 
     this.control = new control.TransitionControl(this);
 
     const svgWidth = this.$selection.node().clientWidth;
     const svgHeight = Math.floor(svgWidth * (this.domain.y[1] - this.domain.y[0])
                               / (this.domain.x[1] - this.domain.x[0]) );
-
     this.svg = new svg.TransitionSVG(this, svgWidth, svgHeight);
   }
 
@@ -52,38 +52,30 @@ e.Transition = class {
   run(mode) {
     switch(mode) {
     case 'forward':
-      this.svg.data = this.end.data;
+      this.svg.data = this.sketchEnd.data;
       this.update();
       break;
     case 'fast-forward': {
-      const duration = this.duration;
-      this.duration = 0.5;
-      this.svg.data = this.end.data;
+      const duration = this.transition.duration;
+      this.transition.duration = 0.5;
+      this.svg.data = this.sketchEnd.data;
       this.svg.update();
-      this.duration = duration;
+      this.transition.duration = duration;
       break;
     }
     case 'backward':
-      this.svg.data = this.start.data;
+      this.svg.data = this.sketchStart.data;
       this.update();
       break;
     case 'fast-backward': {
-      const duration = this.duration;
-      this.duration = 0.5;
-      this.svg.data = this.start.data;
+      const duration = this.transition.duration;
+      this.transition.duration = 0.5;
+      this.svg.data = this.sketchStart.data;
       this.svg.update();
-      this.duration = duration;
+      this.transition.duration = duration;
       break;
     }
     }
-
-    return this;
-  }
-
-  setEaseStyle(style, extension) {
-    this.easeStyle = style || this.easeStyle;
-    this.easeStyleExtension = extension || this.easeStyleExtension;
-    this.easeString = this.easeStyle + '-' + this.easeStyleExtension;
 
     return this;
   }
