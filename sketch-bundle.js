@@ -12558,7 +12558,7 @@ module.exports={
   "dependencies": {
     "debug": "^2.1.2"
   },
-  "devDdependencies": {
+  "devDependencies": {
     "babelify": "^5.0.4",
     "browserify": "^9.0.3",
     "d3": "^3.5.5"
