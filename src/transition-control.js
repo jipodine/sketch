@@ -94,7 +94,7 @@ e.TransitionControl = class {
         debug('transition ease change prevented');
         return;
       }
-      this.parent.setEaseStyle(this.$easeStyle.node().value);
+      this.parent.transition.setEaseStyle(this.$easeStyle.node().value);
       d3.event.stopPropagation();
     });
 
@@ -112,7 +112,7 @@ e.TransitionControl = class {
         debug('transition ease change prevented');
         return;
       }
-      this.parent.setEaseStyle('', this.$easeStyleExtension.node().value);
+      this.parent.transition.setEaseStyle('', this.$easeStyleExtension.node().value);
       d3.event.stopPropagation();
     });
 

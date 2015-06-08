@@ -13731,7 +13731,7 @@ e.TransitionControl = (function () {
         debug("transition ease change prevented");
         return;
       }
-      _this.parent.setEaseStyle(_this.$easeStyle.node().value);
+      _this.parent.transition.setEaseStyle(_this.$easeStyle.node().value);
       d3.event.stopPropagation();
     });
 
@@ -13746,7 +13746,7 @@ e.TransitionControl = (function () {
         debug("transition ease change prevented");
         return;
       }
-      _this.parent.setEaseStyle("", _this.$easeStyleExtension.node().value);
+      _this.parent.transition.setEaseStyle("", _this.$easeStyleExtension.node().value);
       d3.event.stopPropagation();
     });
 
